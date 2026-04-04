@@ -10,6 +10,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  const orig = res.end;
+  res.end = function (...args) {
+    const ms = Date.now() - start;
+    const cached = res.getHeader('x-wwwhippet-cached') || '-';
+    console.log(`  ${req.method} ${req.url} → ${res.statusCode} (${ms}ms) [cache:${cached}]`);
+    orig.apply(this, args);
+  };
+  next();
+});
+
 // Load saved settings on startup
 const saved = settings.load();
 if (saved) {

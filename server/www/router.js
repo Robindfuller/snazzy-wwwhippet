@@ -60,10 +60,16 @@ router.get('*', async (req, res) => {
     if (cached && !cached.expired) {
       const filePath = path.join(PAGES_DIR, cached.file_path);
       if (fs.existsSync(filePath)) {
-        res.set('X-WWWhippet!-Cached', 'true');
-        res.set('X-WWWhippet!-ContentType', cached.content_type);
+        console.log(`  [router] CACHE HIT: ${fakeUrl} (${cached.content_type}, ${Math.round((Date.now()/1000 - cached.created_at))}s old)`);
+        res.set('X-WWWhippet-Cached', 'true');
+        res.set('X-WWWhippet-ContentType', cached.content_type);
         return res.sendFile(filePath);
       }
+      console.log(`  [router] CACHE MISS — file gone: ${cached.file_path}`);
+    } else if (cached) {
+      console.log(`  [router] CACHE EXPIRED: ${fakeUrl} (${Math.round((Date.now()/1000 - cached.created_at))}s old, ttl=${cached.ttl_seconds}s)`);
+    } else {
+      console.log(`  [router] CACHE MISS: ${fakeUrl}`);
     }
 
     // 4. Generate the page
@@ -72,8 +78,8 @@ router.get('*', async (req, res) => {
 
     const { html, contentType } = await generateAndCache(fakeUrl, provider, referrerUrl, linkText);
 
-    res.set('X-WWWhippet!-Cached', 'false');
-    res.set('X-WWWhippet!-ContentType', contentType);
+    res.set('X-WWWhippet-Cached', 'false');
+    res.set('X-WWWhippet-ContentType', contentType);
     res.type('html').send(html);
 
   } catch (err) {

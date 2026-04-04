@@ -41,8 +41,14 @@ async function generateHomepage(provider) {
   if (cached && !cached.expired) {
     const filePath = path.join(PAGES_DIR, cached.file_path);
     if (fs.existsSync(filePath)) {
+      console.log(`  [homepage] CACHE HIT for ${provider} (${Math.round((Date.now()/1000 - cached.created_at))}s old, ttl=${cached.ttl_seconds}s)`);
       return fs.readFileSync(filePath, 'utf-8');
     }
+    console.log(`  [homepage] CACHE MISS — file not found: ${cached.file_path}`);
+  } else if (cached) {
+    console.log(`  [homepage] CACHE EXPIRED for ${provider} (${Math.round((Date.now()/1000 - cached.created_at))}s old, ttl=${cached.ttl_seconds}s)`);
+  } else {
+    console.log(`  [homepage] CACHE MISS — no entry for ${provider}`);
   }
 
   // Generate fresh content
@@ -59,7 +65,7 @@ async function generateHomepage(provider) {
   const html = renderHomepage(content);
 
   // Cache it
-  const hash = crypto.createHash('md5').update(HOMEPAGE_URL + Date.now()).digest('hex');
+  const hash = crypto.createHash('md5').update(HOMEPAGE_URL).digest('hex');
   const relPath = `${provider}/${hash}.html`;
   const absPath = path.join(PAGES_DIR, relPath);
   fs.mkdirSync(path.dirname(absPath), { recursive: true });
