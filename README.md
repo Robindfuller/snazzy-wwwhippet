@@ -81,7 +81,3 @@ server/          # The "internet" — AI generation engine
   www/           # Router, search engine, page generator, content classifier
 scripts/         # systemd install/uninstall
 ```
-
-## License
-
-MIT

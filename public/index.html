@@ -21,29 +21,25 @@
             <div class="desktop" id="desktop">
               <!-- Desktop icons -->
               <div class="desktop-icons">
-                <div class="desktop-icon" id="iconNetscape" title="Netscape Navigator">
-                  <div class="icon-img">&#127760;</div>
-                  <div class="icon-label">Netscape<br>Navigator</div>
-                </div>
-                <div class="desktop-icon" id="iconSettings" title="Settings">
-                  <div class="icon-img">&#9881;</div>
-                  <div class="icon-label">AI Settings</div>
+                <div class="desktop-icon" id="iconMyComputer" title="My Computer">
+                  <div class="icon-img">&#128187;</div>
+                  <div class="icon-label">My Computer</div>
                 </div>
                 <div class="desktop-icon" id="iconRecycle" title="Recycle Bin">
                   <div class="icon-img">&#128465;</div>
                   <div class="icon-label">Recycle Bin</div>
                 </div>
-                <div class="desktop-icon" id="iconMyComputer" title="My Computer">
-                  <div class="icon-img">&#128187;</div>
-                  <div class="icon-label">My Computer</div>
-                </div>
-                <div class="desktop-icon" id="iconGifVault" title="GIF Vault">
-                  <div class="icon-img">&#127912;</div>
-                  <div class="icon-label">GIF Vault</div>
+                <div class="desktop-icon" id="iconSettings" title="Settings">
+                  <div class="icon-img">&#9881;</div>
+                  <div class="icon-label">AI Settings</div>
                 </div>
                 <div class="desktop-icon" id="iconDialup" title="Dial-Up Networking">
                   <div class="icon-img">&#128222;</div>
                   <div class="icon-label">Dial-Up<br>Networking</div>
+                </div>
+                <div class="desktop-icon" id="iconBrowser" title="Internet Browser">
+                  <div class="icon-img">&#127760;</div>
+                  <div class="icon-label">Internet<br>Browser</div>
                 </div>
               </div>
 
@@ -57,12 +53,6 @@
                 <div class="taskbar-divider"></div>
                 <div class="taskbar-tasks" id="taskbarTasks"></div>
                 <div class="taskbar-tray">
-                  <select id="providerSelect" class="provider-select" title="AI Provider">
-                    <option value="claude">Claude</option>
-                    <option value="openai">OpenAI</option>
-                    <!-- <option value="ollama">Ollama</option> -->
-                  </select>
-                  <span class="tray-divider"></span>
                   <span class="connection-indicator" id="connectionIndicator" title="Not connected">&#128264;</span>
                   <span class="tray-divider"></span>
                   <span class="taskbar-clock" id="taskbarClock"></span>
@@ -88,8 +78,9 @@
   <script src="/js/window-manager.js"></script>
   <script src="/js/browser.js"></script>
   <script src="/js/menus.js"></script>
+  <script src="/js/start-menu.js"></script>
+  <script src="/js/settings-panel.js"></script>
   <script src="/js/dialup.js"></script>
-  <script src="/js/provider-switcher.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>

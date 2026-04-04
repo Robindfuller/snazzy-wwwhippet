@@ -150,7 +150,7 @@ const MenuSystem = {
 
   getMenuItems(menuName, browser) {
     const currentUrl = browser?.currentUrl || '';
-    const pageTitle = browser?.titlebarText?.textContent?.replace(' - Netscape', '') || '';
+    const pageTitle = browser?.titlebarText?.textContent?.replace(' - Internet Browser', '') || '';
 
     switch (menuName) {
       case 'file':
@@ -241,8 +241,8 @@ const MenuSystem = {
 
       case 'help':
         return [
-          { label: 'About Netscape', action: () => {
-            alert('WWWhippet! Browser\nPowered by AI-generated 90s internet\n\nBased on Netscape Navigator 3.0');
+          { label: 'About Internet Browser', action: () => {
+            alert('WWWhippet! Internet Browser\nPowered by AI-generated 90s internet');
           }},
           { separator: true },
           { label: 'About the Internet', disabled: true },

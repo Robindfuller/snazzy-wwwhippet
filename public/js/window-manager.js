@@ -38,7 +38,7 @@ const WindowManager = {
       <div class="resize-handle"></div>
       <div class="browser">
         <div class="browser-titlebar">
-          <span class="titlebar-text">Netscape Navigator</span>
+          <span class="titlebar-text">Internet Browser</span>
           <div class="titlebar-buttons">
             <button class="titlebar-btn minimize">_</button>
             <button class="titlebar-btn maximize">&#9633;</button>
@@ -105,7 +105,7 @@ const WindowManager = {
     const taskBtn = document.createElement('button');
     taskBtn.className = 'taskbar-task active';
     taskBtn.dataset.winId = id;
-    taskBtn.textContent = '🌐 Netscape';
+    taskBtn.textContent = '🌐 Internet Browser';
     this.taskbarTasks.appendChild(taskBtn);
 
     // Window state
@@ -180,6 +180,90 @@ const WindowManager = {
     // Deactivate other taskbar buttons
     this.focusWindow(id);
 
+    return winState;
+  },
+
+  // Create a generic (non-browser) window with custom HTML content
+  createGenericWindow(title, contentHtml, opts = {}) {
+    const id = this.nextId++;
+    const offset = ((id - 1) % 5) * 20;
+    const icon = opts.icon || '&#128196;';
+    const width = opts.width || 'calc(100% - 120px)';
+    const height = opts.height || 'calc(100% - 60px)';
+
+    const win = document.createElement('div');
+    win.className = 'browser-window';
+    win.dataset.winId = id;
+    win.style.top = (20 + offset) + 'px';
+    win.style.left = (90 + offset) + 'px';
+    win.style.width = width;
+    win.style.height = height;
+    win.style.zIndex = ++this.topZ;
+
+    win.innerHTML = `
+      <div class="resize-n"></div>
+      <div class="resize-s"></div>
+      <div class="resize-e"></div>
+      <div class="resize-w"></div>
+      <div class="resize-handle"></div>
+      <div class="browser" style="display:flex;flex-direction:column;height:100%;">
+        <div class="browser-titlebar">
+          <span class="titlebar-text">${title}</span>
+          <div class="titlebar-buttons">
+            <button class="titlebar-btn minimize">_</button>
+            <button class="titlebar-btn maximize">&#9633;</button>
+            <button class="titlebar-btn close">X</button>
+          </div>
+        </div>
+        <div class="generic-window-body" style="flex:1;overflow:auto;background:#c0c0c0;padding:0;">
+          ${contentHtml}
+        </div>
+      </div>
+    `;
+
+    const taskbar = this.desktop.querySelector('.taskbar');
+    this.desktop.insertBefore(win, taskbar);
+
+    const taskBtn = document.createElement('button');
+    taskBtn.className = 'taskbar-task active';
+    taskBtn.dataset.winId = id;
+    taskBtn.textContent = icon.replace(/&#\d+;/, '') + ' ' + title.substring(0, 20);
+    this.taskbarTasks.appendChild(taskBtn);
+
+    const winState = { id, el: win, taskBtn, isMaximized: false, isMinimized: false, preMaxState: null, browser: null };
+    this.windows.push(winState);
+
+    // Event wiring (same as browser windows)
+    const titlebar = win.querySelector('.browser-titlebar');
+    const btnMin = win.querySelector('.titlebar-btn.minimize');
+    const btnMax = win.querySelector('.titlebar-btn.maximize');
+    const btnClose = win.querySelector('.titlebar-btn.close');
+
+    win.addEventListener('mousedown', () => this.focusWindow(id));
+    btnMin.addEventListener('click', (e) => { e.stopPropagation(); this.minimizeWindow(id); });
+    btnMax.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMaximize(id); });
+    titlebar.addEventListener('dblclick', (e) => { if (!e.target.closest('.titlebar-btn')) this.toggleMaximize(id); });
+    btnClose.addEventListener('click', (e) => { e.stopPropagation(); this.closeWindow(id); });
+
+    taskBtn.addEventListener('click', () => {
+      if (winState.isMinimized) this.restoreWindow(id);
+      else if (parseInt(win.style.zIndex) === this.topZ) this.minimizeWindow(id);
+      else this.focusWindow(id);
+    });
+
+    titlebar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.titlebar-btn')) return;
+      if (winState.isMaximized) return;
+      this.startDrag(id, e);
+    });
+
+    win.querySelector('.resize-handle').addEventListener('mousedown', (e) => this.startResize(id, 'se', e));
+    win.querySelector('.resize-n').addEventListener('mousedown', (e) => this.startResize(id, 'n', e));
+    win.querySelector('.resize-s').addEventListener('mousedown', (e) => this.startResize(id, 's', e));
+    win.querySelector('.resize-e').addEventListener('mousedown', (e) => this.startResize(id, 'e', e));
+    win.querySelector('.resize-w').addEventListener('mousedown', (e) => this.startResize(id, 'w', e));
+
+    this.focusWindow(id);
     return winState;
   },
 

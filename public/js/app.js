@@ -4,25 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
   WindowManager.init();
   MenuSystem.init();
   DialUp.init();
-  ProviderSwitcher.init();
-
-  // Open first browser window
-  openNewBrowser();
 
   // Desktop icon — double click to open new browser
-  document.getElementById('iconNetscape').addEventListener('dblclick', () => {
+  document.getElementById('iconBrowser').addEventListener('dblclick', () => {
     openNewBrowser();
   });
 
-  // Settings icon — opens in a fake browser window
+  // Settings icon — opens as a desktop window
   document.getElementById('iconSettings').addEventListener('dblclick', () => {
-    openNewBrowser('http://www.wwwhippet.com/settings');
+    SettingsPanel.open();
   });
 
-  // GIF Vault icon — opens in a fake browser window
-  document.getElementById('iconGifVault').addEventListener('dblclick', () => {
-    openNewBrowser('http://www.gifvault.com/');
-  });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
@@ -37,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         parseInt(a.el.style.zIndex) > parseInt(b.el.style.zIndex) ? a : b, WindowManager.windows[0]);
       if (topWin?.browser) {
         const url = topWin.browser.currentUrl;
-        const title = topWin.browser.titlebarText?.textContent?.replace(' - Netscape', '') || url;
+        const title = topWin.browser.titlebarText?.textContent?.replace(' - Internet Browser', '') || url;
         if (url) Bookmarks.add(title, url);
       }
     }
@@ -55,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 30000);
 
-  // Dialup is now manual via the Dial-Up Networking icon
+  // Start menu
+  StartMenu.init();
 });
 
 function openNewBrowser(url) {

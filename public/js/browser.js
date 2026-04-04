@@ -44,6 +44,27 @@ class BrowserInstance {
     url = this.normalizeUrl(url);
     let wwwPath = this.urlToWwwPath(url);
 
+    // Block navigation if not dialed up
+    if (!DialUp.connected) {
+      this.currentUrl = url;
+      this.addressBar.value = url;
+      this.stopThrobber();
+      this.iframe.srcdoc = `<html><body bgcolor="#c0c0c0" text="#000000">
+        <br><br><center>
+        <table border="2" cellpadding="20" bgcolor="#ffffff" width="400"><tr><td>
+        <font face="MS Sans Serif, Arial" size="2">
+        <p><b>&#9888; Unable to connect</b></p>
+        <p>The page cannot be displayed because your computer is not connected to the Internet.</p>
+        <p>To connect, double-click the <b>Dial-Up Networking</b> icon on your desktop.</p>
+        <hr>
+        <p><font size="1" color="#808080">WWWhippet! Dial-Up Networking</font></p>
+        </font></td></tr></table>
+        </center></body></html>`;
+      this.setStatus('Error: Not connected to the Internet');
+      if (this.titlebarText) this.titlebarText.textContent = 'Cannot find server - Internet Browser';
+      return;
+    }
+
     // Pass referrer context
     const referrerUrl = this.currentUrl;
     const refParams = new URLSearchParams();
@@ -144,7 +165,7 @@ class BrowserInstance {
 
       const title = iframeDoc.title;
       if (title) {
-        this.titlebarText.textContent = title + ' - Netscape';
+        this.titlebarText.textContent = title + ' - Internet Browser';
         // Update taskbar button text too
         const winId = this.el.closest('.browser-window')?.dataset.winId;
         if (winId) {
