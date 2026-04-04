@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GIF Vault - WWWhippet!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #1a1a2e;
+      color: #c0c0c0;
+      font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+      font-size: 11px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px groove #444;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      color: #ffcc00;
+      text-shadow: 1px 1px 0 #000;
+    }
+    .header p {
+      margin: 4px 0 0;
+      color: #888;
+      font-size: 10px;
+    }
+    .search-bar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 3px 6px;
+      border: 2px inset #888;
+      background: #fff;
+      font-family: inherit;
+      font-size: 11px;
+    }
+    .search-bar button {
+      padding: 3px 12px;
+      background: #c0c0c0;
+      border: 2px outset #ddd;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .search-bar button:active {
+      border-style: inset;
+    }
+    .suggestions {
+      margin-bottom: 10px;
+      color: #888;
+      font-size: 10px;
+    }
+    .suggestions span {
+      color: #6699cc;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .suggestions span:hover {
+      color: #99ccff;
+    }
+    .results {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .gif-card {
+      background: #2a2a3e;
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: center;
+      width: 100px;
+      cursor: pointer;
+      position: relative;
+    }
+    .gif-card:hover {
+      border-color: #ffcc00;
+      background: #333350;
+    }
+    .gif-card img {
+      max-width: 88px;
+      max-height: 88px;
+      image-rendering: pixelated;
+      display: block;
+      margin: 0 auto 4px;
+    }
+    .gif-card .filename {
+      font-size: 9px;
+      color: #999;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+    .gif-card .dl-link {
+      display: none;
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: #333;
+      color: #ffcc00;
+      font-size: 9px;
+      padding: 1px 4px;
+      border: 1px solid #ffcc00;
+      text-decoration: none;
+    }
+    .gif-card:hover .dl-link {
+      display: block;
+    }
+    .status {
+      color: #888;
+      padding: 20px;
+      text-align: center;
+    }
+    .count {
+      color: #888;
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>GIF Vault</h1>
+    <p>Search the GeoCities GIF archive &mdash; powered by gifcities.org</p>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search for GIFs... (e.g. under construction, fire, star)" autofocus>
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <div class="suggestions">
+    Try:
+    <span data-q="under construction">under construction</span> &middot;
+    <span data-q="fire">fire</span> &middot;
+    <span data-q="star">star</span> &middot;
+    <span data-q="welcome">welcome</span> &middot;
+    <span data-q="email">email</span> &middot;
+    <span data-q="cat">cat</span> &middot;
+    <span data-q="skull">skull</span> &middot;
+    <span data-q="dance">dance</span> &middot;
+    <span data-q="arrow">arrow</span> &middot;
+    <span data-q="divider">divider</span> &middot;
+    <span data-q="heart">heart</span> &middot;
+    <span data-q="explosion">explosion</span>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="results" id="results">
+    <div class="status">Search for GIFs to get started.</div>
+  </div>
+
+  <script>
+    const input = document.getElementById('searchInput');
+    const btn = document.getElementById('searchBtn');
+    const resultsEl = document.getElementById('results');
+    const countEl = document.getElementById('count');
+
+    async function search(q) {
+      if (!q) return;
+      input.value = q;
+      resultsEl.innerHTML = '<div class="status">Searching...</div>';
+      countEl.textContent = '';
+
+      try {
+        const res = await fetch(`/api/gifs?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) {
+          resultsEl.innerHTML = '<div class="status">No GIFs found. Try a different search term.</div>';
+          return;
+        }
+
+        countEl.textContent = `${data.results.length} GIFs found for "${q}"`;
+        resultsEl.innerHTML = '';
+
+        for (const gif of data.results) {
+          const card = document.createElement('div');
+          card.className = 'gif-card';
+          card.innerHTML = `
+            <img src="${gif.proxy}" alt="${gif.filename}" loading="lazy">
+            <div class="filename">${gif.filename}</div>
+            <a class="dl-link" href="${gif.proxy}" download="${gif.filename}" title="Save GIF">save</a>
+          `;
+          resultsEl.appendChild(card);
+        }
+      } catch (err) {
+        resultsEl.innerHTML = `<div class="status">Error: ${err.message}</div>`;
+      }
+    }
+
+    btn.addEventListener('click', () => search(input.value.trim()));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') search(input.value.trim());
+    });
+
+    document.querySelector('.suggestions').addEventListener('click', (e) => {
+      if (e.target.dataset.q) search(e.target.dataset.q);
+    });
+  </script>
+</body>
+</html>

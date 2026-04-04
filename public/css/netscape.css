@@ -1,0 +1,290 @@
+/* Netscape Navigator 3.x / 4.x Browser Chrome */
+
+.browser {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #c0c0c0;
+  font-family: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, Geneva, sans-serif;
+  font-size: 11px;
+}
+
+/* Title bar */
+.browser-titlebar {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #ffffff;
+  padding: 2px 3px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 18px;
+  min-height: 18px;
+}
+
+.titlebar-text {
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+}
+
+.titlebar-buttons {
+  display: flex;
+  gap: 1px;
+}
+
+.titlebar-btn {
+  width: 16px;
+  height: 14px;
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.titlebar-btn:active {
+  border-style: inset;
+}
+
+.titlebar-btn.close {
+  color: #000;
+}
+
+/* Menu bar */
+.browser-menubar {
+  background-color: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  padding: 1px 4px;
+  display: flex;
+  gap: 0;
+  height: 18px;
+  min-height: 18px;
+  align-items: center;
+}
+
+.menu-item {
+  padding: 1px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.menu-item:hover, .menu-item.active {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+/* Dropdown menus */
+.menu-dropdown {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 2px 0;
+  min-width: 180px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  font-size: 11px;
+  font-family: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, Geneva, sans-serif;
+}
+
+.menu-row {
+  padding: 2px 20px 2px 8px;
+  cursor: default;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  white-space: nowrap;
+}
+
+.menu-row:hover:not(.disabled) {
+  background: #000080;
+  color: #ffffff;
+}
+
+.menu-row.disabled {
+  color: #808080;
+}
+
+.menu-label {
+  pointer-events: none;
+}
+
+.menu-shortcut {
+  color: #808080;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.menu-row:hover:not(.disabled) .menu-shortcut {
+  color: #c0c0c0;
+}
+
+.menu-separator {
+  height: 1px;
+  background: #808080;
+  margin: 3px 2px;
+  border-bottom: 1px solid #ffffff;
+}
+
+/* Navigation toolbar */
+.browser-toolbar {
+  background-color: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 36px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.nav-btn {
+  background-color: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  cursor: pointer;
+  padding: 1px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: inherit;
+  min-width: 42px;
+}
+
+.nav-btn:active:not(:disabled) {
+  border-style: inset;
+}
+
+.nav-btn:disabled {
+  color: #808080;
+  cursor: default;
+}
+
+.nav-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.nav-label {
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* Throbber (Netscape N logo) */
+.throbber {
+  width: 32px;
+  height: 32px;
+  border: 2px outset #c0c0c0;
+  background: #000080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.throbber-n {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Times New Roman', serif;
+}
+
+.throbber.loading .throbber-n {
+  animation: throbber-spin 0.6s linear infinite;
+}
+
+@keyframes throbber-spin {
+  0% { transform: rotate(0deg); opacity: 1; }
+  25% { opacity: 0.6; }
+  50% { transform: rotate(180deg); opacity: 1; }
+  75% { opacity: 0.6; }
+  100% { transform: rotate(360deg); opacity: 1; }
+}
+
+/* Address bar */
+.browser-addressbar {
+  background-color: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  min-height: 22px;
+}
+
+.address-label {
+  font-size: 11px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.address-input {
+  flex: 1;
+  border: 2px inset #c0c0c0;
+  background: #ffffff;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 11px;
+  padding: 1px 3px;
+  height: 18px;
+}
+
+/* Viewport */
+.browser-viewport {
+  flex: 1;
+  background: #ffffff;
+  border: 2px inset #c0c0c0;
+  margin: 0 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.browser-viewport iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+/* Status bar */
+.browser-statusbar {
+  background-color: #c0c0c0;
+  border-top: 1px solid #ffffff;
+  padding: 1px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 18px;
+  min-height: 18px;
+}
+
+.status-text {
+  font-size: 11px;
+  border: 1px inset #c0c0c0;
+  padding: 0 4px;
+  flex: 1;
+  height: 14px;
+  line-height: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.status-security {
+  font-size: 11px;
+  padding: 0 4px;
+}
+
+.security-icon {
+  font-size: 10px;
+}

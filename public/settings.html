@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WWWhippet! - Settings</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'MS Sans Serif', Tahoma, Geneva, sans-serif;
+      font-size: 12px;
+      background: #c0c0c0;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .window {
+      background: #c0c0c0;
+      border: 2px outset #c0c0c0;
+      width: 480px;
+    }
+    .window-titlebar {
+      background: linear-gradient(90deg, #000080, #1084d0);
+      color: #fff;
+      padding: 3px 5px;
+      font-weight: bold;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .titlebar-buttons { display: flex; gap: 2px; }
+    .titlebar-btn {
+      width: 16px; height: 14px;
+      background: #c0c0c0;
+      border: 2px outset #c0c0c0;
+      font-size: 9px; font-weight: bold;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+    }
+    .titlebar-btn:active { border-style: inset; }
+    .window-body { padding: 10px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: -1px;
+      position: relative;
+      z-index: 1;
+    }
+    .tab {
+      padding: 4px 12px;
+      background: #c0c0c0;
+      border: 2px outset #c0c0c0;
+      border-bottom: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+    }
+    .tab.active {
+      background: #c0c0c0;
+      border-bottom: 2px solid #c0c0c0;
+      font-weight: bold;
+    }
+    .tab:not(.active) {
+      background: #a0a0a0;
+      margin-top: 2px;
+    }
+
+    .tab-content {
+      border: 2px inset #c0c0c0;
+      padding: 12px;
+      background: #c0c0c0;
+      min-height: 280px;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Form elements */
+    fieldset {
+      border: 2px groove #c0c0c0;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+    legend {
+      font-weight: bold;
+      padding: 0 4px;
+      font-size: 11px;
+    }
+    label {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 11px;
+    }
+    input[type="text"], input[type="password"], input[type="url"] {
+      width: 100%;
+      border: 2px inset #c0c0c0;
+      background: #fff;
+      padding: 2px 4px;
+      font-family: inherit;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    select {
+      border: 2px inset #c0c0c0;
+      background: #fff;
+      padding: 2px 4px;
+      font-family: inherit;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    .btn {
+      background: #c0c0c0;
+      border: 2px outset #c0c0c0;
+      padding: 3px 16px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      min-width: 75px;
+    }
+    .btn:active { border-style: inset; }
+    .btn-primary { font-weight: bold; }
+
+    .button-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid #808080;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid #808080;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .status-ok { background: #00cc00; }
+    .status-error { background: #cc0000; }
+    .status-unknown { background: #cccc00; }
+
+    .provider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 4px;
+    }
+    .provider-row.active-provider {
+      background: #ddd;
+      border: 1px solid #999;
+    }
+
+    .help-text {
+      color: #666;
+      font-size: 10px;
+      margin-top: -4px;
+      margin-bottom: 8px;
+    }
+
+    .test-result {
+      border: 2px inset #c0c0c0;
+      background: #fff;
+      padding: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      min-height: 40px;
+      max-height: 80px;
+      overflow-y: auto;
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+
+    .model-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .model-row label { display: inline; margin: 0; min-width: 80px; }
+    .model-row input { flex: 1; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="window-titlebar">
+      <span>WWWhippet! Settings</span>
+      <div class="titlebar-buttons">
+        <button class="titlebar-btn" onclick="window.location='/'">X</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('providers')">Providers</button>
+        <button class="tab" onclick="switchTab('claude')">Claude</button>
+        <button class="tab" onclick="switchTab('openai')">OpenAI</button>
+        <button class="tab" onclick="switchTab('ollama')">Ollama</button>
+      </div>
+
+      <div class="tab-content">
+        <!-- Providers overview tab -->
+        <div class="tab-pane active" id="tab-providers">
+          <fieldset>
+            <legend>Active Provider</legend>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <label style="display:inline;margin:0;">Current:</label>
+              <select id="activeProvider" onchange="setActiveProvider(this.value)">
+                <option value="claude">Claude</option>
+                <option value="openai">OpenAI</option>
+                <option value="ollama">Ollama</option>
+              </select>
+              <span id="providerStatusIcon" class="status-indicator status-unknown"></span>
+              <span id="providerStatusText" style="font-size:11px;">Checking...</span>
+            </div>
+            <p class="help-text">Switching provider gives you a completely separate AI-generated internet.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Provider Status</legend>
+            <div class="provider-row" id="status-claude">
+              <span class="status-indicator status-unknown" id="dot-claude"></span>
+              <b>Claude</b> — <span id="status-text-claude">Not tested</span>
+            </div>
+            <div class="provider-row" id="status-openai">
+              <span class="status-indicator status-unknown" id="dot-openai"></span>
+              <b>OpenAI</b> — <span id="status-text-openai">Not tested</span>
+            </div>
+            <div class="provider-row" id="status-ollama">
+              <span class="status-indicator status-unknown" id="dot-ollama"></span>
+              <b>Ollama</b> — <span id="status-text-ollama">Not tested</span>
+            </div>
+            <div style="margin-top:8px;">
+              <button class="btn" onclick="testAllProviders()">Test All</button>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Claude tab -->
+        <div class="tab-pane" id="tab-claude">
+          <fieldset>
+            <legend>API Key</legend>
+            <label for="claudeKey">Anthropic API Key:</label>
+            <input type="password" id="claudeKey" placeholder="sk-ant-...">
+            <p class="help-text">Get your key from <b>console.anthropic.com</b></p>
+          </fieldset>
+          <fieldset>
+            <legend>Models</legend>
+            <div class="model-row">
+              <label>Full model:</label>
+              <input type="text" id="claudeModel" value="claude-sonnet-4-20250514">
+            </div>
+            <div class="model-row">
+              <label>Fast model:</label>
+              <input type="text" id="claudeFastModel" value="claude-haiku-4-5-20251001">
+            </div>
+            <p class="help-text">Full model generates pages. Fast model generates search results.</p>
+          </fieldset>
+          <button class="btn" onclick="testProvider('claude')">Test Connection</button>
+          <div class="test-result" id="test-result-claude"></div>
+        </div>
+
+        <!-- OpenAI tab -->
+        <div class="tab-pane" id="tab-openai">
+          <fieldset>
+            <legend>API Key</legend>
+            <label for="openaiKey">OpenAI API Key:</label>
+            <input type="password" id="openaiKey" placeholder="sk-...">
+            <p class="help-text">Get your key from <b>platform.openai.com</b></p>
+          </fieldset>
+          <fieldset>
+            <legend>Models</legend>
+            <div class="model-row">
+              <label>Full model:</label>
+              <input type="text" id="openaiModel" value="gpt-4o">
+            </div>
+            <div class="model-row">
+              <label>Fast model:</label>
+              <input type="text" id="openaiFastModel" value="gpt-4o-mini">
+            </div>
+          </fieldset>
+          <button class="btn" onclick="testProvider('openai')">Test Connection</button>
+          <div class="test-result" id="test-result-openai"></div>
+        </div>
+
+        <!-- Ollama tab -->
+        <div class="tab-pane" id="tab-ollama">
+          <fieldset>
+            <legend>Connection</legend>
+            <label for="ollamaUrl">Base URL:</label>
+            <input type="url" id="ollamaUrl" value="http://localhost:11434">
+            <p class="help-text">Ollama must be running locally. Install from <b>ollama.com</b></p>
+          </fieldset>
+          <fieldset>
+            <legend>Model</legend>
+            <div class="model-row">
+              <label>Model:</label>
+              <input type="text" id="ollamaModel" value="llama3.1">
+            </div>
+            <p class="help-text">Make sure the model is pulled: <b>ollama pull llama3.1</b></p>
+          </fieldset>
+          <button class="btn" onclick="testProvider('ollama')">Test Connection</button>
+          <div class="test-result" id="test-result-ollama"></div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+        <button class="btn" onclick="window.location='/'">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    // Load current settings on page load
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+
+        document.getElementById('activeProvider').value = data.provider;
+
+        if (data.claude) {
+          if (data.claude.apiKey) document.getElementById('claudeKey').value = data.claude.apiKey;
+          if (data.claude.model) document.getElementById('claudeModel').value = data.claude.model;
+          if (data.claude.fastModel) document.getElementById('claudeFastModel').value = data.claude.fastModel;
+        }
+        if (data.openai) {
+          if (data.openai.apiKey) document.getElementById('openaiKey').value = data.openai.apiKey;
+          if (data.openai.model) document.getElementById('openaiModel').value = data.openai.model;
+          if (data.openai.fastModel) document.getElementById('openaiFastModel').value = data.openai.fastModel;
+        }
+        if (data.ollama) {
+          if (data.ollama.baseUrl) document.getElementById('ollamaUrl').value = data.ollama.baseUrl;
+          if (data.ollama.model) document.getElementById('ollamaModel').value = data.ollama.model;
+        }
+
+        updateProviderHighlight(data.provider);
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    function updateProviderHighlight(provider) {
+      document.querySelectorAll('.provider-row').forEach(r => r.classList.remove('active-provider'));
+      const row = document.getElementById('status-' + provider);
+      if (row) row.classList.add('active-provider');
+    }
+
+    async function setActiveProvider(provider) {
+      try {
+        await fetch('/api/provider', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider }),
+        });
+        updateProviderHighlight(provider);
+        document.getElementById('providerStatusText').textContent = 'Switched to ' + provider;
+      } catch (err) {
+        document.getElementById('providerStatusText').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function saveSettings() {
+      const settings = {
+        provider: document.getElementById('activeProvider').value,
+        claude: {
+          apiKey: document.getElementById('claudeKey').value,
+          model: document.getElementById('claudeModel').value,
+          fastModel: document.getElementById('claudeFastModel').value,
+        },
+        openai: {
+          apiKey: document.getElementById('openaiKey').value,
+          model: document.getElementById('openaiModel').value,
+          fastModel: document.getElementById('openaiFastModel').value,
+        },
+        ollama: {
+          baseUrl: document.getElementById('ollamaUrl').value,
+          model: document.getElementById('ollamaModel').value,
+        },
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert('Settings saved successfully.');
+        } else {
+          alert('Error saving settings: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error saving settings: ' + err.message);
+      }
+    }
+
+    async function testProvider(provider) {
+      const resultEl = document.getElementById('test-result-' + provider);
+      const dotEl = document.getElementById('dot-' + provider);
+      const textEl = document.getElementById('status-text-' + provider);
+
+      resultEl.textContent = 'Testing...';
+      dotEl.className = 'status-indicator status-unknown';
+
+      try {
+        // Save current settings first so test uses latest keys
+        await saveSettingsSilent();
+
+        const res = await fetch('/api/test-provider', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider }),
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          resultEl.textContent = 'SUCCESS: ' + data.message;
+          dotEl.className = 'status-indicator status-ok';
+          textEl.textContent = 'Connected';
+        } else {
+          resultEl.textContent = 'FAILED: ' + data.error;
+          dotEl.className = 'status-indicator status-error';
+          textEl.textContent = 'Error';
+        }
+      } catch (err) {
+        resultEl.textContent = 'ERROR: ' + err.message;
+        dotEl.className = 'status-indicator status-error';
+        textEl.textContent = 'Error';
+      }
+    }
+
+    async function testAllProviders() {
+      testProvider('claude');
+      testProvider('openai');
+      testProvider('ollama');
+    }
+
+    async function saveSettingsSilent() {
+      const settings = {
+        provider: document.getElementById('activeProvider').value,
+        claude: {
+          apiKey: document.getElementById('claudeKey').value,
+          model: document.getElementById('claudeModel').value,
+          fastModel: document.getElementById('claudeFastModel').value,
+        },
+        openai: {
+          apiKey: document.getElementById('openaiKey').value,
+          model: document.getElementById('openaiModel').value,
+          fastModel: document.getElementById('openaiFastModel').value,
+        },
+        ollama: {
+          baseUrl: document.getElementById('ollamaUrl').value,
+          model: document.getElementById('ollamaModel').value,
+        },
+      };
+
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+    }
+
+    loadSettings();
+  </script>
+</body>
+</html>

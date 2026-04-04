@@ -1,0 +1,350 @@
+/* Windows 95-style desktop — lives INSIDE the CRT screen */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background: #1a1a1a;
+  font-family: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, Geneva, sans-serif;
+  font-size: 11px;
+  user-select: none;
+}
+
+.outer-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Desktop fills the CRT screen */
+.desktop {
+  width: 100%;
+  height: 100%;
+  background-color: #008080;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Desktop icons */
+.desktop-icons {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1;
+}
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 56px;
+  padding: 2px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.desktop-icon:hover {
+  border: 1px dotted #ffffff;
+}
+
+.desktop-icon.selected {
+  background: rgba(0, 0, 128, 0.5);
+  border: 1px dotted #ffffff;
+}
+
+.icon-img {
+  font-size: 24px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.icon-label {
+  font-size: 9px;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.2;
+  text-shadow: 1px 1px 1px #000;
+}
+
+/* Browser window on the desktop */
+.browser-window {
+  position: absolute;
+  top: 2px;
+  left: 68px;
+  width: calc(100% - 72px);
+  height: calc(100% - 28px);
+  z-index: 10;
+  display: flex;
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.browser-window.minimized {
+  display: none !important;
+}
+
+.browser-window.maximized {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: calc(100% - 24px) !important;
+}
+
+/* Resize handle */
+.browser-window .resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  z-index: 20;
+}
+
+.browser-window .resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+}
+
+/* Resize handles on edges */
+.browser-window .resize-n { position: absolute; top: -2px; left: 4px; right: 4px; height: 4px; cursor: n-resize; z-index: 20; }
+.browser-window .resize-s { position: absolute; bottom: -2px; left: 4px; right: 4px; height: 4px; cursor: s-resize; z-index: 20; }
+.browser-window .resize-e { position: absolute; top: 4px; right: -2px; bottom: 4px; width: 4px; cursor: e-resize; z-index: 20; }
+.browser-window .resize-w { position: absolute; top: 4px; left: -2px; bottom: 4px; width: 4px; cursor: w-resize; z-index: 20; }
+
+/* Taskbar */
+.taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background-color: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  z-index: 100;
+  gap: 2px;
+}
+
+.start-button {
+  background-color: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 1px 4px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  white-space: nowrap;
+}
+
+.start-button:active {
+  border-style: inset;
+}
+
+.start-flag {
+  font-size: 12px;
+}
+
+.taskbar-divider {
+  width: 1px;
+  height: 18px;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  margin: 0 1px;
+}
+
+.taskbar-tasks {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.taskbar-task {
+  background-color: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  text-align: left;
+}
+
+.taskbar-task.active {
+  border-style: inset;
+  font-weight: bold;
+}
+
+.taskbar-tray {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px inset #c0c0c0;
+  padding: 1px 4px;
+  height: 20px;
+}
+
+.provider-select {
+  font-family: inherit;
+  font-size: 9px;
+  background: #ffffff;
+  border: 1px inset #c0c0c0;
+  padding: 0 1px;
+  height: 14px;
+}
+
+.tray-divider {
+  width: 1px;
+  height: 14px;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+}
+
+.taskbar-clock {
+  font-size: 10px;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.connection-indicator {
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 1px;
+}
+
+/* Dial-Up Networking dialog */
+.dialup-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  z-index: 9999;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 11px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+}
+
+.dialup-titlebar {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #ffffff;
+  padding: 2px 4px;
+  font-weight: bold;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialup-close {
+  width: 16px;
+  height: 14px;
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  font-size: 9px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.dialup-close:active {
+  border-style: inset;
+}
+
+.dialup-body {
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.dialup-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+}
+
+.dialup-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dialup-status {
+  font-weight: bold;
+  padding: 4px;
+  border: 1px inset #c0c0c0;
+  background: #ffffff;
+}
+
+.dialup-info {
+  color: #333;
+}
+
+.dialup-log {
+  border: 2px inset #c0c0c0;
+  background: #000000;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  padding: 4px;
+  height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.dialup-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.dialup-btn {
+  padding: 2px 16px;
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.dialup-btn:active {
+  border-style: inset;
+}
+
+.dialup-btn:disabled {
+  color: #808080;
+  cursor: default;
+}
