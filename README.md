@@ -20,6 +20,8 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 - **Click any link** — every link leads to another freshly-generated page, building an entire interconnected web as you browse
 - **Dial-up networking** — with authentic modem sounds (optional Ollama integration actually loads/unloads models on "connect" and "disconnect")
 - **Page types** — personal homepages, fan sites, university pages, corporate sites, news portals — each with era-appropriate layouts, content, and personality
+- **mIRC client** — live AI-powered IRC with warez channels, XDCC file downloads, and unforgettable regulars
+- **MIDI player** — Windows Media Player 6.4-style MIDI playback with real Web Audio synthesis
 - **GIF Vault** — browse and search real animated GIFs from the 90s web
 - **Settings panel** — swap AI providers on the fly
 
@@ -30,7 +32,8 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 3. Type `www.anything-you-want.com` in the address bar
 4. Watch the throbber spin as AI generates a pixel-perfect 90s webpage
 5. Click links. Fall down rabbit holes. Discover someone's Buffy fan shrine. Read a university research page about Java applets. Visit a GeoCities neighbourhood.
-6. Lose an hour. No regrets.
+6. Open mIRC. Join `#warez`. Try to download a movie. Get kicked by cuno.
+7. Lose an hour. No regrets.
 
 Every page is built with **real 90s HTML** — `<table>` layouts, `<font>` tags, `bgcolor` attributes, `<marquee>`, `<blink>`, nested tables within tables within tables. No CSS. No divs. Just like the creator of the original page intended.
 
@@ -50,6 +53,74 @@ npm start
 ```
 
 Open `http://localhost:3000` and start browsing.
+
+## mIRC Client
+
+Double-click the mIRC icon on the desktop to open a fully simulated IRC client. You connect to a late-1999 warez server with three channels:
+
+| Channel | Scene |
+|---------|-------|
+| `#warez` | Software, games, keygens, serials |
+| `#mp3z` | MP3 albums and singles |
+| `#moviez` | DivX AVI and VCD rips |
+
+### The Regulars
+
+Every channel has AI-driven personalities that respond dynamically to whatever you type.
+
+**cuno** `@` — Channel op since 1994. Terse, lowercase, zero patience. Will warn you once. Will kick you on principle. Treats his op status as a religion.
+
+**Phweak!** — Wannabe hacker, full-time cuno fanboy. Drops 2600 references. Piles on whoever cuno is annoyed with. Loves you if cuno loves you; hates you if cuno hates you.
+
+**eggnog123** — Genuinely nice, absolutely clueless. Asks what's already in the topic. Doesn't know what XDCC is. Apologizes profusely. Repeats the exact same mistake 30 seconds later.
+
+Each channel also has background regulars: codec zealots, serial-number experts, audiophiles who will explain why 128kbps is an insult to music.
+
+### XDCC Downloads
+
+Type `/msg xdcc_bot !list` (or `!get N` for a specific pack) to initiate a file transfer. Each channel has its own bot:
+
+- **xdcc_bot** — Warez: Half-Life, Counter-Strike beta, Photoshop 5, Quake 2, WinAmp, ICQ
+- **xdcc_bot2** — MP3z: Nirvana, Eminem, Spice Girls, Radiohead, Backstreet Boys, The Prodigy
+- **xdcc_bot3** — Moviez: The Matrix, Fight Club, Star Wars SE, Titanic, Saving Private Ryan (CAM rips and VCDs)
+
+Files download into **My Computer** and persist between sessions.
+
+### My Computer
+
+Downloaded files appear in a Windows Explorer-style file manager. Double-click anything to open it — and experience the authentic 1999 codec nightmare:
+
+- **.avi files** — "Missing codec: DIVX (DivX MPEG-4 Video Codec v3.11alpha). Please visit www.divx.com"
+- **.mpg files** — "VCD MPEG-1 decoder not found. The file may also be incomplete — downloaded 621 MB of expected 654 MB"
+- **.mp3 files** — WinAmp in_mp3.dll error: frame sync header is missing or corrupt. Expected 4,408,320 bytes; got 1,835,008 bytes
+- **.zip files** — WinZip CRC Error: Bad CRC, the file may be incomplete
+- **.exe files** — "This program has performed an illegal operation and will be shut down"
+
+MIDI files are the one exception — they actually play (see below).
+
+## MIDI Player
+
+Pages can embed MIDI music, and there's a dedicated **MIDI Farm** browser (`midi.html`) for the full library. Playback uses a retro Windows Media Player 6.4-style UI backed by real Web Audio synthesis — no plugins required.
+
+### Playback
+
+The player parses actual MIDI binary format: reads the MThd/MTrk headers, collects note-on/off events across all tracks, tracks tempo changes, and converts tick times to real seconds. Playback uses Web Audio oscillators (triangle wave) with ADSR envelopes and velocity-scaled gain, scheduled in a 50ms lookahead loop. Percussion channel (10) is silently skipped for cleaner output.
+
+### Music Library
+
+The library covers the full 1999 playlist:
+
+| Genre | Titles |
+|-------|--------|
+| Rock | Bohemian Rhapsody, Stairway to Heaven, Hotel California, Smoke on the Water |
+| Pop | Wannabe, Barbie Girl, MMMBop |
+| Movie | Star Wars, Jurassic Park, Titanic, Men in Black, Mission Impossible |
+| Classical | Für Elise, Moonlight Sonata, Canon in D |
+| TV | X-Files, Friends, Seinfeld, The Simpsons |
+| Video Game | Super Mario, Zelda, Tetris |
+| Christmas | Jingle Bells, Silent Night, Deck the Halls |
+
+MIDI files are sourced live from MidiWorld.com (with a local cache), and genres without an online source use procedurally generated MIDI: genre-specific note sequences, instrument program changes, and tempo.
 
 ## AI Providers
 
@@ -75,11 +146,20 @@ sudo scripts/uninstall-service.sh
 
 ```
 public/          # The "shell" — desktop, browser chrome, CRT effects
-  css/           # Desktop, Netscape, CRT scanline styles
-  js/            # Window manager, browser, dial-up, audio
+  css/           # Desktop, Netscape, mIRC, CRT scanline styles
+  js/            # Window manager, browser, mIRC client, dial-up, audio
+  midi.html      # MIDI Farm music library browser
+  gifs.html      # GIF Vault browser
 server/          # The "internet" — AI generation engine
-  prompts/       # Era-specific prompt templates (personal, fansite, corporate, etc.)
+  mirc-chat.js   # AI IRC persona engine
+  downloads.js   # XDCC download persistence
   providers/     # Claude, OpenAI, Ollama adapters
   www/           # Router, search engine, page generator, content classifier
+    midi-catalog.js      # MIDI library + procedural generation
+    midiworld-service.js # MidiWorld.com live scraper + cache
 scripts/         # systemd install/uninstall
+data/
+  downloads.json # Persistent My Computer file list
+  midi-cache/    # Cached MIDI files
+  wwwhippet.db   # Pages, links, search results (SQLite)
 ```
