@@ -1,19 +1,5 @@
-// Scale the CRT monitor to fit the viewport on small screens
-function scaleCRTMonitor() {
-  const monitor = document.querySelector('.crt-monitor');
-  if (!monitor) return;
-  const DESIGN_W = 740;
-  const DESIGN_H = 608; // 580px monitor + 28px margin-bottom
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const scale = Math.min(1, vw / DESIGN_W, vh / DESIGN_H);
-  monitor.style.zoom = scale < 1 ? scale : '';
-}
-window.addEventListener('resize', scaleCRTMonitor);
-
 // Boot sequence
 document.addEventListener('DOMContentLoaded', () => {
-  scaleCRTMonitor();
   AudioManager.init();
   WindowManager.init();
   MenuSystem.init();
