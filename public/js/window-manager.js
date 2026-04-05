@@ -38,7 +38,7 @@ const WindowManager = {
       <div class="resize-handle"></div>
       <div class="browser">
         <div class="browser-titlebar">
-          <span class="titlebar-text">Internet Browser</span>
+          <span class="titlebar-text">Whippet Browser</span>
           <div class="titlebar-buttons">
             <button class="titlebar-btn minimize">_</button>
             <button class="titlebar-btn maximize">&#9633;</button>
@@ -105,7 +105,7 @@ const WindowManager = {
     const taskBtn = document.createElement('button');
     taskBtn.className = 'taskbar-task active';
     taskBtn.dataset.winId = id;
-    taskBtn.textContent = '🌐 Internet Browser';
+    taskBtn.textContent = '🌐 Whippet Browser';
     this.taskbarTasks.appendChild(taskBtn);
 
     // Window state

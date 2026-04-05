@@ -8,12 +8,14 @@ Type any URL. Get a fully-generated, gloriously authentic mid-90s webpage — co
 ![Era](https://img.shields.io/badge/era-1996--1998-blue)
 ![Blink](https://img.shields.io/badge/%3Cblink%3E-yes-red)
 
+![WWWhippet! screenshot](screenshot.jpg)
+
 ## What is this?
 
 WWWhippet simulates the entire experience of browsing the internet in the late '90s. It's not just a CSS skin or a retro theme — it's a **living, breathing fake internet** generated on the fly by AI.
 
 - **A full desktop environment** — CRT monitor, scanlines, taskbar, Start button, draggable windows
-- **Internet Browser** — Netscape Navigator-style interface with address bar, throbber, the works
+- **Whippet Browser** — Netscape Navigator-style interface with address bar, throbber, the works
 - **A search engine** — type a query, get a page of AI-generated 90s search results
 - **Click any link** — every link leads to another freshly-generated page, building an entire interconnected web as you browse
 - **Dial-up networking** — with authentic modem sounds (optional Ollama integration actually loads/unloads models on "connect" and "disconnect")
@@ -23,7 +25,7 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 
 ## The Experience
 
-1. Double-click Internet Browser
+1. Double-click Whippet Browser
 2. Hear the modem screech (if you dare)
 3. Type `www.anything-you-want.com` in the address bar
 4. Watch the throbber spin as AI generates a pixel-perfect 90s webpage

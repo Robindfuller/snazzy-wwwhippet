@@ -150,7 +150,7 @@ const MenuSystem = {
 
   getMenuItems(menuName, browser) {
     const currentUrl = browser?.currentUrl || '';
-    const pageTitle = browser?.titlebarText?.textContent?.replace(' - Internet Browser', '') || '';
+    const pageTitle = browser?.titlebarText?.textContent?.replace(' - Whippet Browser', '') || '';
 
     switch (menuName) {
       case 'file':
@@ -241,8 +241,8 @@ const MenuSystem = {
 
       case 'help':
         return [
-          { label: 'About Internet Browser', action: () => {
-            alert('WWWhippet! Internet Browser\nPowered by AI-generated 90s internet');
+          { label: 'About Whippet Browser', action: () => {
+            alert('WWWhippet! Whippet Browser\nPowered by AI-generated 90s internet');
           }},
           { separator: true },
           { label: 'About the Internet', disabled: true },

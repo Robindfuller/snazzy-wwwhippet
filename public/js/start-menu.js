@@ -130,7 +130,7 @@ const StartMenu = {
   getSubmenuItems(name) {
     if (name === 'programs') {
       return [
-        { icon: '&#127760;', label: 'Internet Browser', action: 'browser' },
+        { icon: '&#127760;', label: 'Whippet Browser', action: 'browser' },
         { separator: true },
         { icon: '&#128196;', label: 'GIF Vault', action: 'gifvault' },
       ];

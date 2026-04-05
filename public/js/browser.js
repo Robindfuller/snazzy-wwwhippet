@@ -61,7 +61,7 @@ class BrowserInstance {
         </font></td></tr></table>
         </center></body></html>`;
       this.setStatus('Error: Not connected to the Internet');
-      if (this.titlebarText) this.titlebarText.textContent = 'Cannot find server - Internet Browser';
+      if (this.titlebarText) this.titlebarText.textContent = 'Cannot find server - Whippet Browser';
       return;
     }
 
@@ -165,7 +165,7 @@ class BrowserInstance {
 
       const title = iframeDoc.title;
       if (title) {
-        this.titlebarText.textContent = title + ' - Internet Browser';
+        this.titlebarText.textContent = title + ' - Whippet Browser';
         // Update taskbar button text too
         const winId = this.el.closest('.browser-window')?.dataset.winId;
         if (winId) {

@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         parseInt(a.el.style.zIndex) > parseInt(b.el.style.zIndex) ? a : b, WindowManager.windows[0]);
       if (topWin?.browser) {
         const url = topWin.browser.currentUrl;
-        const title = topWin.browser.titlebarText?.textContent?.replace(' - Internet Browser', '') || url;
+        const title = topWin.browser.titlebarText?.textContent?.replace(' - Whippet Browser', '') || url;
         if (url) Bookmarks.add(title, url);
       }
     }
