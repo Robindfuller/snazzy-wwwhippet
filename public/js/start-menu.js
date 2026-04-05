@@ -131,8 +131,9 @@ const StartMenu = {
     if (name === 'programs') {
       return [
         { icon: '&#127760;', label: 'Whippet Browser', action: 'browser' },
+        { icon: '&#9889;',   label: 'mIRC',             action: 'mirc' },
         { separator: true },
-        { icon: '&#128196;', label: 'GIF Vault', action: 'gifvault' },
+        { icon: '&#128196;', label: 'GIF Vault',        action: 'gifvault' },
       ];
     }
     return [];
@@ -143,9 +144,11 @@ const StartMenu = {
       case 'browser':
         openNewBrowser();
         break;
+      case 'mirc':
+        openMirc();
+        break;
       case 'mycomputer':
-        // Fun placeholder
-        alert('My Computer\n\n(C:) Hard Disk — 2.1 GB\n(D:) CD-ROM Drive\n(A:) 3½ Floppy');
+        openMyComputer();
         break;
       case 'settings':
         SettingsPanel.open();

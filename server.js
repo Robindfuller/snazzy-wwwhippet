@@ -94,6 +94,20 @@ app.get('/api/link-map', (req, res) => {
   });
 });
 
+// mIRC AI chat endpoint
+const mircChat = require('./server/mirc-chat');
+
+app.post('/api/mirc/chat', async (req, res) => {
+  const { channel, message, history } = req.body;
+  if (!channel || !message) return res.status(400).json({ error: 'Missing channel or message' });
+  try {
+    const responses = await mircChat.generateChatResponse(channel, message, history || []);
+    res.json({ responses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Image proxy - serves external images through our origin to avoid CORS/mixed content
 const imageProxyCache = path.join(__dirname, 'data', 'img-cache');
 const fs = require('fs');

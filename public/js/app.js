@@ -15,6 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
     SettingsPanel.open();
   });
 
+  // mIRC icon
+  document.getElementById('iconMirc').addEventListener('dblclick', () => {
+    openMirc();
+  });
+
+  // My Computer icon — opens file explorer
+  document.getElementById('iconMyComputer').addEventListener('dblclick', () => {
+    openMyComputer();
+  });
+
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
