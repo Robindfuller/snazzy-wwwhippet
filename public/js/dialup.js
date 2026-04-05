@@ -5,6 +5,7 @@ const DialUp = {
   dialogEl: null,
   providers: [],      // { name, label, configured }
   selectedProvider: null,
+  _onConnectCallbacks: [],
 
   init() {
     // Desktop icon
@@ -69,6 +70,17 @@ const DialUp = {
       el.innerHTML = '&#128264;'; // speaker/modem
       el.title = 'Not connected — double-click Dial-Up Networking to connect';
       el.style.color = '';
+    }
+  },
+
+  // Show dialog with optional callback when connection succeeds
+  showDialogAndConnect(onConnected) {
+    if (onConnected) this._onConnectCallbacks.push(onConnected);
+    this.showDialog();
+    // Auto-click connect if not already connected
+    if (!this.connected && !this.connecting) {
+      const connectBtn = this.dialogEl?.querySelector('#dialupConnect');
+      if (connectBtn) connectBtn.click();
     }
   },
 
@@ -215,6 +227,10 @@ const DialUp = {
       this.setStatus('Connected to ' + label);
       this.connected = true;
       this.updateIndicator();
+
+      // Fire any pending callbacks (e.g. mIRC waiting for connection)
+      const cbs = this._onConnectCallbacks.splice(0);
+      cbs.forEach(cb => cb());
 
       // Refresh dialog buttons
       const btns = this.dialogEl?.querySelector('.dialup-buttons');
