@@ -188,22 +188,24 @@ const MIRC_BOT_ADS = {
 // Corruption errors by file type
 const MIRC_CORRUPT_ERRORS = {
   avi: [
-    'Windows Media Player cannot play the file. The file format is not supported or the required codec DIVX is not installed.\n\nPlease visit www.divx.com to download the DivX codec.',
-    'ERROR: Codec not found!\n\nThis file requires the DivX 3.11alpha codec which is not installed on your system. The file may also be incomplete or corrupt (CRC mismatch at byte 247891).',
+    'Cannot render file.\n\nThe filter graph manager cannot render the file:\nC:\\Downloads\\{filename}\n\nThe codec required to decompress this file is not installed on your computer.\n\nMissing codec: DIVX (DivX MPEG-4 Video Codec v3.11alpha)\n\nPlease visit www.divx.com to download and install the DivX codec.',
+    'Windows Media Player cannot play the file.\n\nA codec is required to play this file. To determine if this codec is available to download from the Web, click Web Help.\n\nCodec: DIVX  —  DivX MPEG-4 Low-Motion\nFourCC: DIVX  Status: Not installed',
   ],
   mpg: [
-    'Windows Media Player has encountered an unknown error.\n\nThe file may be corrupt or the VCD format is not recognized. Portions of this file appear to be missing (expected 654MB, got 621MB).',
+    'Windows Media Player cannot play the file.\n\nThe codec needed to decompress the file C:\\Downloads\\{filename} is not installed on your computer.\n\nCodec: MPEG-1 Video Decoder\nNote: This VCD title may be split across multiple discs. Ensure you have obtained all parts before playing.',
+    'Media Player Error\n\nCannot play back the video stream: no suitable decompressor found.\n\nVCD MPEG-1 decoder not found or not registered. The file may also be incomplete — downloaded 621 MB of expected 654 MB.',
   ],
   mp3: [
-    "WinAmp v2.92 - Playback Error\n\nUnable to play 'C:\\Downloads\\{filename}'.\nThe file header is corrupt or the MP3 frame sync is missing.\n\nThe file may have been incompletely downloaded.",
+    'Windows Media Player cannot play the file.\n\nThe codec needed to decompress the audio format MP3 is not installed on your computer. Contact the content provider or the application vendor for a codec that supports this audio format.\n\nCodec: MPEG Layer-3 (MP3) Audio\nSample rate: 44100 Hz  Bitrate: 128 kbps\nStatus: Decompressor not found',
+    "WinAmp v2.92 — in_mp3.dll Error\n\nUnable to open: C:\\Downloads\\{filename}\n\nThe MPEG Layer-3 input plugin encountered an error reading this file. The frame sync header is missing or corrupt. This usually means the file was not fully downloaded.\n\nExpected file size: 4,408,320 bytes\nActual file size:   1,835,008 bytes",
   ],
   zip: [
-    'WinZip Error\n\nCannot open archive: C:\\Downloads\\{filename}\n\nThe archive is either in unknown format or damaged.\nCRC failed in {filename}. (Expected 0x4A2C1F88 got 0x00000000)',
-    'WinZip Error\n\nInsufficient memory (or disk space) to extract this archive, or the archive is corrupt.\n\nPlease re-download the file.',
+    'WinZip Self-Extractor\n\nCannot open archive: C:\\Downloads\\{filename}\n\nThe archive header is corrupt or the file is not a valid ZIP archive.\nCRC Error: CRC mismatch in {filename}\n  Expected: 4A 2C 1F 88\n  Found:    00 00 00 00\n\nThe file may have been incompletely downloaded. Please re-download.',
+    'WinZip Error\n\nBad CRC  C:\\Downloads\\{filename}.\n\nWinZip cannot guarantee that the file is correct. There may be an error in the archive or the file may be incomplete.',
   ],
   exe: [
-    'This program has performed an illegal operation and will be shut down.\n\nIf the problem persists, contact the program vendor.\n\nICOMP caused an invalid page fault in module KERNEL32.DLL at 0177:bff9db73.',
-    'Setup Error\n\nSetup has detected that the install package is corrupt or incomplete.\n\nPlease download the file again from the original source.',
+    'This program has performed an illegal operation and will be shut down.\n\nIf the problem persists, contact the program vendor.\n\nSETUP caused an invalid page fault in module KERNEL32.DLL\nat 0177:bff9db73.\n\nRegisters:\nEAX=00000000  CS=017f  EIP=bff9db73  EFLGS=00010246\nEBX=00000000  SS=0187  ESP=0063fa70  EBP=0063fb08',
+    'InstallShield Wizard Error\n\nAn error occurred while extracting the installation files.\n\nError Code: 0x80004005 (Unspecified error)\nModule: C:\\WINDOWS\\SYSTEM\\MSVBVM60.DLL\n\nThe installation package may be corrupt or incomplete. Please re-download from the original source.',
   ],
 };
 
@@ -519,6 +521,48 @@ const MircClient = {
     this.winState.el.addEventListener('click', (e) => {
       if (!e.target.closest('button') && !e.target.closest('a')) input.focus();
     });
+
+    // File menu dropdown
+    const menubar = this.winState.el.querySelector('.mirc-menubar');
+    if (menubar) {
+      const fileItem = menubar.querySelector('.mirc-menu-item');
+      if (fileItem) {
+        fileItem.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const existing = menubar.querySelector('.mirc-file-dropdown');
+          if (existing) { existing.remove(); fileItem.classList.remove('open'); return; }
+
+          fileItem.classList.add('open');
+          const drop = document.createElement('div');
+          drop.className = 'mirc-file-dropdown';
+          drop.innerHTML = `
+            <div class="mirc-dropdown-item" id="mircMenuDisconnect">Disconnect</div>
+            <div class="mirc-dropdown-sep"></div>
+            <div class="mirc-dropdown-item" id="mircMenuClose">Close</div>
+          `;
+          menubar.appendChild(drop);
+
+          drop.querySelector('#mircMenuClose').addEventListener('click', () => {
+            clearInterval(this._adTimer);
+            this._adTimer = null;
+            WindowManager.closeWindow(this.winState.id);
+          });
+          drop.querySelector('#mircMenuDisconnect').addEventListener('click', () => {
+            drop.remove(); fileItem.classList.remove('open');
+            this._addMsg(this.currentChannel, { type: 'server', text: '*** Disconnected from irc.dal.net (Connection reset by peer)' });
+          });
+
+          // Close dropdown on outside click
+          const dismiss = (ev) => {
+            if (!drop.contains(ev.target) && ev.target !== fileItem) {
+              drop.remove(); fileItem.classList.remove('open');
+              document.removeEventListener('click', dismiss);
+            }
+          };
+          setTimeout(() => document.addEventListener('click', dismiss), 0);
+        });
+      }
+    }
   },
 
   _el(id) {
