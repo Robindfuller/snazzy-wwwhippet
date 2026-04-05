@@ -531,7 +531,8 @@ const MediaPlayer = {
       });
     }
 
-    el.querySelector('.win-close')?.addEventListener('click', () => this.stop());
+    // Stop playback when the window is closed via WindowManager
+    this._currentWin.onClose = () => this.stop();
   },
 
   async _loadAndPlay(midiUrl, title) {
@@ -563,6 +564,9 @@ const MediaPlayer = {
       if (!this._parsedNotes || this._parsedNotes.length === 0) {
         throw new Error('No notes found in MIDI');
       }
+
+      // Reset channel programs
+      this._channelPrograms = new Array(16).fill(0);
 
       // Sort by time
       this._parsedNotes.sort((a, b) => a.time - b.time);
@@ -601,6 +605,12 @@ const MediaPlayer = {
         const note = this._parsedNotes[this._noteIndex];
         if (note.time > elapsed + LOOK_AHEAD) break;
 
+        // Handle program change events inline
+        if (note.type === 'programChange') {
+          this._channelPrograms[note.channel] = note.program;
+          this._noteIndex++;
+          continue;
+        }
         const playAt = this._playbackStart - this._pauseOffset + note.time;
         if (playAt > ctx.currentTime - 0.05) {
           this._playNote(note, playAt);
@@ -630,30 +640,89 @@ const MediaPlayer = {
     tick();
   },
 
+  // Channel programs (updated by program change events in parser)
+  _channelPrograms: new Array(16).fill(0),
+
   _playNote(note, time) {
     const ctx = this._audioCtx;
     const freq = 440 * Math.pow(2, (note.note - 69) / 12);
     const vel = note.velocity / 127;
     const dur = note.duration || 0.15;
+    const ch = note.channel;
 
-    // Skip percussion channel (10) for cleaner sound
-    if (note.channel === 9) return;
+    // Skip percussion channel (10)
+    if (ch === 9) return;
 
-    const osc = ctx.createOscillator();
+    const prog = this._channelPrograms[ch] || 0;
+
+    // Pick waveform based on GM program group
+    let wave1, wave2, detune, attack, release, baseVol;
+    if (prog < 8) {
+      // Piano — square + triangle, slight detune
+      wave1 = 'square'; wave2 = 'triangle'; detune = 3; attack = 0.005; release = 0.3; baseVol = 0.08;
+    } else if (prog < 16) {
+      // Chromatic percussion — triangle
+      wave1 = 'triangle'; wave2 = 'triangle'; detune = 1; attack = 0.002; release = 0.15; baseVol = 0.07;
+    } else if (prog < 24) {
+      // Organ — square + square, no detune
+      wave1 = 'square'; wave2 = 'square'; detune = 6; attack = 0.01; release = 0.05; baseVol = 0.05;
+    } else if (prog < 32) {
+      // Guitar — sawtooth + triangle
+      wave1 = 'sawtooth'; wave2 = 'triangle'; detune = 2; attack = 0.003; release = 0.2; baseVol = 0.07;
+    } else if (prog < 40) {
+      // Bass — triangle, lower vol
+      wave1 = 'triangle'; wave2 = 'sine'; detune = 1; attack = 0.005; release = 0.15; baseVol = 0.10;
+    } else if (prog < 48) {
+      // Strings — sawtooth + sawtooth, wide detune for chorus
+      wave1 = 'sawtooth'; wave2 = 'sawtooth'; detune = 8; attack = 0.05; release = 0.1; baseVol = 0.06;
+    } else if (prog < 56) {
+      // Ensemble — sawtooth + triangle
+      wave1 = 'sawtooth'; wave2 = 'triangle'; detune = 10; attack = 0.04; release = 0.1; baseVol = 0.06;
+    } else if (prog < 64) {
+      // Brass — sawtooth
+      wave1 = 'sawtooth'; wave2 = 'square'; detune = 4; attack = 0.02; release = 0.08; baseVol = 0.07;
+    } else if (prog < 72) {
+      // Reed — square
+      wave1 = 'square'; wave2 = 'sawtooth'; detune = 3; attack = 0.01; release = 0.08; baseVol = 0.06;
+    } else if (prog < 80) {
+      // Pipe / flute — sine + triangle
+      wave1 = 'sine'; wave2 = 'triangle'; detune = 2; attack = 0.02; release = 0.1; baseVol = 0.08;
+    } else {
+      // Synth / pads / FX — default
+      wave1 = 'sawtooth'; wave2 = 'triangle'; detune = 5; attack = 0.03; release = 0.15; baseVol = 0.06;
+    }
+
+    const endTime = time + dur;
+    const releaseEnd = endTime + release;
+    const amp = vel * baseVol;
+
+    // Oscillator 1
+    const osc1 = ctx.createOscillator();
+    osc1.type = wave1;
+    osc1.frequency.value = freq;
+
+    // Oscillator 2 — detuned for richness
+    const osc2 = ctx.createOscillator();
+    osc2.type = wave2;
+    osc2.frequency.value = freq;
+    osc2.detune.value = detune;
+
+    // Shared gain with ADSR-ish envelope
     const gain = ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(vel * 0.12, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    gain.gain.linearRampToValueAtTime(amp, time + attack);
+    // Sustain at slightly lower level
+    gain.gain.setValueAtTime(amp * 0.8, endTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, releaseEnd);
 
-    osc.connect(gain);
+    osc1.connect(gain);
+    osc2.connect(gain);
     gain.connect(this._gainNode);
 
-    osc.start(time);
-    osc.stop(time + dur + 0.02);
+    osc1.start(time);
+    osc2.start(time);
+    osc1.stop(releaseEnd + 0.01);
+    osc2.stop(releaseEnd + 0.01);
   },
 
   _parseMidi(data) {
@@ -740,7 +809,11 @@ const MediaPlayer = {
           }
         } else if (eventType === 0xa || eventType === 0xb || eventType === 0xe) {
           pos += 2;
-        } else if (eventType === 0xc || eventType === 0xd) {
+        } else if (eventType === 0xc) {
+          // Program change — store for channel timbre selection
+          const program = data[pos++];
+          allNotes.push({ type: 'programChange', channel, program, tick });
+        } else if (eventType === 0xd) {
           pos += 1;
         } else {
           break;
@@ -772,13 +845,18 @@ const MediaPlayer = {
       return seconds;
     }
 
-    return allNotes.map(n => ({
-      time: tickToSeconds(n.tick),
-      duration: Math.min(2, Math.max(0.05, tickToSeconds(n.offTick || n.tick + ticksPerBeat) - tickToSeconds(n.tick))),
-      note: n.noteNum,
-      velocity: n.velocity,
-      channel: n.channel,
-    }));
+    return allNotes.map(n => {
+      if (n.type === 'programChange') {
+        return { type: 'programChange', time: tickToSeconds(n.tick), channel: n.channel, program: n.program };
+      }
+      return {
+        time: tickToSeconds(n.tick),
+        duration: Math.min(2, Math.max(0.05, tickToSeconds(n.offTick || n.tick + ticksPerBeat) - tickToSeconds(n.tick))),
+        note: n.noteNum,
+        velocity: n.velocity,
+        channel: n.channel,
+      };
+    });
   },
 
   _formatTime(secs) {
@@ -819,6 +897,13 @@ const MediaPlayer = {
     this._parsedNotes = null;
     this._noteIndex = 0;
     this._pauseOffset = 0;
+
+    // Close audio context to immediately silence all in-flight oscillators
+    if (this._audioCtx) {
+      this._audioCtx.close().catch(() => {});
+      this._audioCtx = null;
+      this._gainNode = null;
+    }
 
     const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
     if (seekFill) seekFill.style.width = '0%';

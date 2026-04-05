@@ -337,6 +337,7 @@ const WindowManager = {
   closeWindow(id) {
     const win = this.getWindow(id);
     if (!win) return;
+    if (win.onClose) win.onClose();
     win.el.remove();
     win.taskBtn.remove();
     this.windows = this.windows.filter(w => w.id !== id);
