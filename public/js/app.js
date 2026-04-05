@@ -1,5 +1,21 @@
+// Scale the CRT monitor to fill the viewport on small screens.
+// Uses transform: scale() so fonts render at correct px sizes first,
+// then the whole monitor is scaled down uniformly.
+function scaleCRTMonitor() {
+  const monitor = document.querySelector('.crt-monitor');
+  if (!monitor) return;
+  // Clear any existing transform to read natural dimensions
+  monitor.style.transform = '';
+  const W = monitor.offsetWidth;
+  const H = monitor.offsetHeight + parseFloat(getComputedStyle(monitor).marginBottom || 0);
+  const scale = Math.min(1, window.innerWidth / W, window.innerHeight / H);
+  monitor.style.transform = scale < 1 ? `scale(${scale})` : '';
+}
+window.addEventListener('resize', scaleCRTMonitor);
+
 // Boot sequence
 document.addEventListener('DOMContentLoaded', () => {
+  scaleCRTMonitor();
   AudioManager.init();
   WindowManager.init();
   MenuSystem.init();

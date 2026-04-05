@@ -6,6 +6,8 @@
   width: 740px;
   height: 580px;
   margin-bottom: 28px;
+  flex-shrink: 0;
+  transform-origin: center center;
 }
 
 .crt-bezel {
@@ -87,4 +89,22 @@
   background: linear-gradient(180deg, #c0b088, #a89870);
   border-radius: 1px;
   border: 1px solid #988860;
+}
+
+/* Mobile: strip down the bezel so the screen fills as much of the
+   scaled monitor box as possible */
+@media (max-width: 768px) {
+  .crt-bezel {
+    padding: 6px 6px 4px 6px;
+    border-radius: 2px;
+  }
+  .crt-bezel-top {
+    display: none;
+  }
+  .crt-bezel-bottom {
+    padding: 3px 6px 0;
+  }
+  .crt-monitor {
+    margin-bottom: 4px;
+  }
 }
