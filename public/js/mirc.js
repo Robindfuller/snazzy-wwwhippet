@@ -31,6 +31,7 @@ const MIRC_CHANNEL_USERS = {
     { nick: 'DivXRulez',  mode: 'op',  isBot: false },
     { nick: 'Phweak!',    mode: '',    isBot: false },
     { nick: 'eggnog123',  mode: '',    isBot: false },
+    { nick: 'cuno',       mode: '',    isBot: false },
     { nick: 'VCDking',    mode: '',    isBot: false },
     { nick: 'CAMmaster',  mode: '',    isBot: false },
     { nick: 'xdcc_bot3',  mode: 'op',  isBot: true  },
@@ -82,6 +83,17 @@ const XDCC_BOTS = {
       { id: 7,  name: 'Jurassic.Park.1993.VHSRip.DivX.avi',          size: '688 MB', bytes: 688  * 1024 * 1024, type: 'avi' },
       { id: 8,  name: 'Pulp.Fiction.1994.DivX.avi',                  size: '694 MB', bytes: 694  * 1024 * 1024, type: 'avi' },
       { id: 9,  name: 'Saving.Private.Ryan.1998.VCD.part1.mpg',      size: '654 MB', bytes: 654  * 1024 * 1024, type: 'mpg' },
+    ],
+  },
+};
+
+// Direct DCC offers from users (not bots — slow, resumable transfers)
+const DCC_USER_FILES = {
+  'cuno': {
+    channel: '#moviez',
+    files: [
+      { id: 1, name: 'Star.Wars.Ep1.The.Phantom.Menace.1999.VCD.CD1.avi', size: '688 MB', bytes: 688 * 1024 * 1024, type: 'avi', resumePct: 10, slow: true },
+      { id: 2, name: 'Star.Wars.Ep1.The.Phantom.Menace.1999.VCD.CD2.avi', size: '672 MB', bytes: 672 * 1024 * 1024, type: 'avi', resumePct: 10, slow: true },
     ],
   },
 };
@@ -158,6 +170,16 @@ const MIRC_PRELOAD = {
     { type: 'chat',   nick: 'Phweak!',    text: 'thats so sick, p3 450 is so fast' },
     { type: 'chat',   nick: 'VCDking',    text: 'still think vcd plays better on my standalone player tho no cap' },
     { type: 'chat',   nick: 'Kane',       text: 'buy a real dvd player' },
+    { type: 'chat',   nick: 'cuno',       text: 'oi lads got star wars phantom menace on vcd, 2 discs. dcc me if u want it' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'cuno is it a good rip or that dodgy one with the hardcoded chinese subs' },
+    { type: 'chat',   nick: 'cuno',       text: 'nah its proper pal vcd rip no subs, got it off usenet last week' },
+    { type: 'chat',   nick: 'Kane',       text: 'cuno whats your upload speed' },
+    { type: 'chat',   nick: 'cuno',       text: 'errr like 2k/sec on a good day lol' },
+    { type: 'chat',   nick: 'Kane',       text: '...' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'lmao thats gonna take like 4 days per disc' },
+    { type: 'chat',   nick: 'cuno',       text: 'yea well leave getright on overnight innit' },
+    { type: 'dcc',    nick: 'cuno',       text: '*** cuno is offering DCC: Star.Wars.Ep1.The.Phantom.Menace.1999.VCD.CD1.avi (688 MB) — type /msg cuno !get 1', dcc_user: { nick: 'cuno', id: 1 } },
+    { type: 'dcc',    nick: 'cuno',       text: '*** cuno is offering DCC: Star.Wars.Ep1.The.Phantom.Menace.1999.VCD.CD2.avi (672 MB) — type /msg cuno !get 2', dcc_user: { nick: 'cuno', id: 2 } },
     { type: 'chat',   nick: 'eggnog123',  text: 'wait do i need a dvd player for this or just the codec?? asking for a friend haha' },
     { type: 'chat',   nick: 'Kane',       text: 'last warning' },
     { type: 'chat',   nick: 'Phweak!',    text: 'LMAOOOO' },
@@ -1126,23 +1148,26 @@ const MircClient = {
   },
 
   _handleBotMsg(botNick, botCmd, arg) {
-    // Find bot
+    // Check DCC user files first, then XDCC bots
+    const dccUser = DCC_USER_FILES[botNick];
     const bot = XDCC_BOTS[botNick];
-    if (!bot) {
+
+    if (!bot && !dccUser) {
       this._addMsg(this.currentChannel, { type: 'notice', text: `*** ${botNick} is not online` });
       return;
     }
 
+    const files = dccUser ? dccUser.files : bot.files;
+
     if (botCmd === '!list') {
-      // Show file list as private notice
       this._addMsg(this.currentChannel, { type: 'notice', text: `*** /msg from ${botNick}: Pack listing:` });
-      bot.files.forEach(f => {
+      files.forEach(f => {
         this._addMsg(this.currentChannel, { type: 'notice', text: `  #${f.id}  [${f.size.padEnd(8)}]  ${f.name}` });
       });
       this._addMsg(this.currentChannel, { type: 'notice', text: `*** End of pack list` });
     } else if (botCmd === '!get' && arg) {
       const id = parseInt(arg);
-      const file = bot.files.find(f => f.id === id);
+      const file = files.find(f => f.id === id);
       if (file) {
         this._startDcc(botNick, file);
       } else {
@@ -1227,10 +1252,16 @@ const MircClient = {
   },
 
   _startDcc(botNick, file) {
-    this._addMsg(this.currentChannel, { type: 'dcc', text: `*** DCC SEND from ${botNick}: "${file.name}" (${file.size}) - Accepting...` });
+    const isResume = file.resumePct > 0;
+    const isSlow = file.slow;
 
-    const duration = this._downloadDuration(file.bytes);
-    const fakeSpeedKbs = (file.bytes / 1024 / duration).toFixed(1);
+    if (isResume) {
+      this._addMsg(this.currentChannel, { type: 'dcc', text: `*** DCC SEND from ${botNick}: "${file.name}" (${file.size}) - Resuming from ${file.resumePct}%...` });
+    } else {
+      this._addMsg(this.currentChannel, { type: 'dcc', text: `*** DCC SEND from ${botNick}: "${file.name}" (${file.size}) - Accepting...` });
+    }
+
+    const duration = isSlow ? 999999 : this._downloadDuration(file.bytes);
 
     // Open DCC progress window
     const dccWin = WindowManager.createGenericWindow(
@@ -1254,12 +1285,25 @@ const MircClient = {
     const cancelBtn = dccWin.el.querySelector('.mirc-dcc-cancel');
     const completeMsg = dccWin.el.querySelector('.mirc-dcc-complete-msg');
 
-    let progress = 0;
+    let progress = isResume ? file.resumePct : 0;
     let cancelled = false;
     const startTime = Date.now();
-    const interval = 300;
-    const steps = (duration * 1000) / interval;
-    const increment = 100 / steps;
+    const interval = isSlow ? 2000 : 300;
+
+    // For slow transfers: crawl at ~0.01-0.03% per tick (would take days)
+    // For normal: calculate from duration
+    const steps = isSlow ? 999999 : (duration * 1000) / 300;
+    const increment = isSlow ? 0 : (100 / steps);
+
+    // Set initial state for resumed transfers
+    if (isResume) {
+      const received = Math.floor((progress / 100) * file.bytes);
+      if (fill) fill.style.width = progress + '%';
+      if (pct) pct.textContent = progress + '%';
+      if (rcvdEl) rcvdEl.textContent = received.toLocaleString();
+      if (connStatus) connStatus.textContent = 'Resuming transfer...';
+      if (recvStatus) recvStatus.textContent = `Resumed at ${(received / (1024*1024)).toFixed(1)} MB`;
+    }
 
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => {
@@ -1270,11 +1314,14 @@ const MircClient = {
       });
     }
 
-    // Simulate speed fluctuations (56k style)
-    const speeds = [1.8, 2.1, 2.4, 2.9, 3.1, 3.4, 2.8, 3.2, 1.2, 2.7, 3.5, 0.9, 3.1, 2.5];
+    // Speed arrays: slow transfers get painfully slow speeds (0.1-0.8 KB/s)
+    const normalSpeeds = [1.8, 2.1, 2.4, 2.9, 3.1, 3.4, 2.8, 3.2, 1.2, 2.7, 3.5, 0.9, 3.1, 2.5];
+    const slowSpeeds = [0.2, 0.4, 0.1, 0.6, 0.3, 0.8, 0.2, 0.5, 0.0, 0.3, 0.7, 0.1, 0.4, 0.0, 0.2, 0.5];
+    const speeds = isSlow ? slowSpeeds : normalSpeeds;
     let speedIdx = 0;
 
     const fmtTime = (secs) => {
+      if (secs > 86400 * 10) return '---:--:--';
       const h = Math.floor(secs / 3600);
       const m = Math.floor((secs % 3600) / 60);
       const s = Math.floor(secs % 60);
@@ -1283,18 +1330,32 @@ const MircClient = {
 
     const timer = setInterval(() => {
       if (cancelled) return;
-      progress = Math.min(100, progress + increment + (Math.random() - 0.5) * increment * 0.5);
+
+      if (isSlow) {
+        // Painfully slow: tiny random increment, sometimes none
+        const crawl = Math.random() < 0.3 ? 0 : (Math.random() * 0.02);
+        progress = Math.min(100, progress + crawl);
+      } else {
+        progress = Math.min(100, progress + increment + (Math.random() - 0.5) * increment * 0.5);
+      }
 
       const elapsed = (Date.now() - startTime) / 1000;
       const received = Math.floor((progress / 100) * file.bytes);
       const speed = speeds[speedIdx % speeds.length];
       speedIdx++;
       const cps = Math.floor(speed * 1024);
-      const etaSecs = Math.max(0, Math.round((file.bytes - received) / cps));
+      const remaining = file.bytes - received;
+      const etaSecs = cps > 0 ? Math.max(0, Math.round(remaining / cps)) : 999999;
 
       // Update connection status after first tick
       if (connStatus && elapsed > 0.5) connStatus.textContent = 'Connection established';
-      if (recvStatus && elapsed > 1) recvStatus.textContent = 'Receiving file...';
+      if (recvStatus && elapsed > 1) {
+        if (isSlow && speed === 0) {
+          recvStatus.textContent = 'Stalled — waiting for data...';
+        } else {
+          recvStatus.textContent = 'Receiving file...';
+        }
+      }
 
       // Update stat cells
       if (timeEl) timeEl.textContent = fmtTime(elapsed);
@@ -1420,7 +1481,15 @@ const MircClient = {
       line.innerHTML = `<span class="mirc-ts">${ts}</span> ${this._esc(msg.text)}`;
     } else if (msg.type === 'dcc') {
       line.className += ' mirc-msg-dcc';
-      line.innerHTML = `<span class="mirc-ts">${ts}</span> ${this._esc(msg.text)}`;
+      let dccText = this._esc(msg.text);
+      if (msg.dcc_user) {
+        const { nick, id } = msg.dcc_user;
+        dccText = dccText.replace(
+          /\/msg (\S+) !get (\d+)/g,
+          `<span class="mirc-xdcc-link" data-dcc-user="${nick}" data-id="${id}">/msg $1 !get $2</span>`
+        );
+      }
+      line.innerHTML = `<span class="mirc-ts">${ts}</span> ${dccText}`;
     } else if (msg.type === 'error') {
       line.className += ' mirc-msg-error';
       line.innerHTML = `<span class="mirc-ts">${ts}</span> ${this._esc(msg.text)}`;
@@ -1434,12 +1503,20 @@ const MircClient = {
     line.querySelectorAll('.mirc-xdcc-link').forEach(link => {
       link.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Check if it's a DCC user link or XDCC bot link
+        const dccUser = link.dataset.dccUser;
         const botName = link.dataset.bot;
         const packId = parseInt(link.dataset.id);
-        const bot = XDCC_BOTS[botName];
-        if (bot) {
-          const file = bot.files.find(f => f.id === packId);
-          if (file) this._startDcc(botName, file);
+
+        if (dccUser && DCC_USER_FILES[dccUser]) {
+          const file = DCC_USER_FILES[dccUser].files.find(f => f.id === packId);
+          if (file) this._startDcc(dccUser, file);
+        } else if (botName) {
+          const bot = XDCC_BOTS[botName];
+          if (bot) {
+            const file = bot.files.find(f => f.id === packId);
+            if (file) this._startDcc(botName, file);
+          }
         }
       });
     });
