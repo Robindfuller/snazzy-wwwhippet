@@ -32,6 +32,20 @@ async function generateSearchResults(query, provider) {
   // Filter out any results linking to wwwhippet.com
   results = results.filter(r => !r.url.toLowerCase().includes('wwwhippet'));
 
+  // Inject MIDI Farm result for MIDI-related searches
+  const qLower = query.toLowerCase();
+  if (qLower.includes('midi') || qLower.includes('.mid') || qLower.includes('midi file')) {
+    results.unshift({
+      title: 'MIDI Farm - Free MIDI Files Download Archive',
+      url: 'http://www.midifarm.com/',
+      snippet: 'Search and download thousands of free MIDI files. Rock, pop, classical, movie themes, TV themes, video game music, and more. All files are real .mid format and can be played in Windows Media Player.',
+      type: 'directory',
+      date: 'Updated daily',
+    });
+    // Keep max 10 results
+    if (results.length > 10) results = results.slice(0, 10);
+  }
+
   // Cache results
   searchOps.set(provider, query, results);
 

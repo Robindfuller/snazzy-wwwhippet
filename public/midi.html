@@ -46,6 +46,7 @@
       text-decoration: none;
       margin: 0 8px;
       font-size: 11px;
+      cursor: pointer;
     }
     .nav a:hover { color: #ffff00; }
     .content {
@@ -62,7 +63,6 @@
       padding-bottom: 3px;
       margin-bottom: 6px;
     }
-    .genre-title img { vertical-align: middle; margin-right: 4px; }
     .midi-table {
       width: 100%;
       border-collapse: collapse;
@@ -133,116 +133,143 @@
       cursor: pointer;
     }
     .loading { color: #888; text-align: center; padding: 20px; }
+    .search-results-header {
+      color: #00ff00;
+      font-size: 12px;
+      margin: 8px 0 6px;
+    }
+    .search-results-header span { color: #ffff00; }
+    .search-info {
+      color: #666;
+      font-size: 9px;
+      text-align: center;
+      margin: 4px 0;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 2px;
+      margin: 8px 0 4px;
+      justify-content: center;
+    }
+    .tab-btn {
+      padding: 3px 12px;
+      background: #000055;
+      border: 1px solid #4444aa;
+      color: #888;
+      font-family: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #000088;
+      color: #ffff00;
+      border-bottom-color: #000088;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>&#9835; MIDI <span>Farm</span> &#9835;</h1>
     <p>Your #1 Source for Free MIDI Files on the Web!</p>
-    <div class="counter">Visitors: 48,291 | MIDIs: <span id="midiCount">0</span> files</div>
+    <div class="counter">Visitors: 48,291 | Powered by MidiWorld.com</div>
   </div>
   <div class="nav">
-    <a href="#" onclick="filterGenre('all')">All</a> |
-    <a href="#" onclick="filterGenre('rock')">Rock</a> |
-    <a href="#" onclick="filterGenre('pop')">Pop</a> |
-    <a href="#" onclick="filterGenre('movie')">Movie</a> |
-    <a href="#" onclick="filterGenre('classical')">Classical</a> |
-    <a href="#" onclick="filterGenre('tv')">TV Themes</a> |
-    <a href="#" onclick="filterGenre('videogame')">Video Games</a> |
-    <a href="#" onclick="filterGenre('christmas')">Christmas</a>
+    <a onclick="liveSearch('rock')">Rock</a> |
+    <a onclick="liveSearch('pop')">Pop</a> |
+    <a onclick="liveSearch('classic')">Classical</a> |
+    <a onclick="liveSearch('movie themes')">Movie</a> |
+    <a onclick="liveSearch('tv themes')">TV Themes</a> |
+    <a onclick="liveSearch('video game themes')">Video Games</a> |
+    <a onclick="liveSearch('christmas carols')">Christmas</a> |
+    <a onclick="liveSearch('jazz')">Jazz</a> |
+    <a onclick="liveSearch('blues')">Blues</a> |
+    <a onclick="liveSearch('country')">Country</a>
   </div>
   <div class="content">
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search MIDI files...">
-      <button onclick="searchMidis()">Search</button>
+      <input type="text" id="searchInput" placeholder="Search for any song, artist, or genre...">
+      <button onclick="doSearch()">Search</button>
     </div>
+    <div class="search-info">Search thousands of real MIDI files - type a song name, artist, or genre</div>
     <div id="results">
-      <div class="loading">Loading MIDI catalog...</div>
+      <div class="loading">Type a search term or click a genre above to browse MIDI files</div>
     </div>
   </div>
   <div class="footer">
-    &copy; 1997-1999 MIDI Farm. All MIDI files are sequenced by fans.<br>
+    &copy; 1997-1999 MIDI Farm. MIDI files provided by MidiWorld.com<br>
     <a href="mailto:webmaster@midifarm.com">webmaster@midifarm.com</a> |
     Best viewed with Netscape Navigator 3.0+
   </div>
 
   <script>
-    let allMidis = [];
-    const genreIcons = {
-      rock: '&#127928;', pop: '&#127925;', movie: '&#127916;',
-      classical: '&#127929;', tv: '&#128250;', videogame: '&#127918;',
-      christmas: '&#127876;'
-    };
-    const genreNames = {
-      rock: 'Rock & Classic Rock', pop: 'Pop & Dance',
-      movie: 'Movie Soundtracks', classical: 'Classical',
-      tv: 'TV Themes', videogame: 'Video Game Music',
-      christmas: 'Christmas & Holiday'
-    };
+    let lastQuery = '';
 
-    async function loadCatalog() {
+    async function liveSearch(query) {
+      document.getElementById('searchInput').value = query;
+      await doSearch();
+    }
+
+    async function doSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      lastQuery = q;
+
+      document.getElementById('results').innerHTML =
+        '<div class="loading">Connecting to MidiWorld.com...<br><br>Searching for "' + q + '"...</div>';
+
       try {
-        const res = await fetch('/api/midi/catalog');
-        allMidis = await res.json();
-        document.getElementById('midiCount').textContent = allMidis.length;
-        renderMidis(allMidis);
+        // Simulate 56k modem delay
+        await new Promise(r => setTimeout(r, 5000 + Math.random() * 3000));
+        const res = await fetch('/api/midi/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+
+        if (data.results.length === 0) {
+          document.getElementById('results').innerHTML =
+            '<div class="loading">No MIDI files found for "' + q + '". Try a different search.</div>';
+          return;
+        }
+
+        renderResults(data.results, q);
       } catch (e) {
         document.getElementById('results').innerHTML =
-          '<div class="loading">Error loading catalog. Try refreshing.</div>';
+          '<div class="loading">Search error. Please try again.</div>';
       }
     }
 
-    function renderMidis(midis) {
-      const grouped = {};
-      midis.forEach(m => {
-        if (!grouped[m.genre]) grouped[m.genre] = [];
-        grouped[m.genre].push(m);
+    function renderResults(results, query) {
+      let html = `<div class="search-results-header">&#9835; Found <span>${results.length}</span> MIDI files for "<span>${query}</span>"</div>`;
+      html += `<table class="midi-table">
+        <tr><th>Song</th><th>Artist</th><th>File</th><th></th></tr>`;
+
+      results.forEach(r => {
+        html += `<tr>
+          <td>${r.title}</td>
+          <td>${r.artist}</td>
+          <td><a class="dl-link" href="${r.downloadUrl}"
+                 data-midi-title="${r.fullTitle}"
+                 data-midi-file="${r.filename}"
+                 data-midi-url="${r.downloadUrl}">${r.filename}</a></td>
+          <td><a class="play-link" href="${r.downloadUrl}"
+                 data-midi-title="${r.fullTitle}"
+                 data-midi-file="${r.filename}"
+                 data-midi-url="${r.downloadUrl}">&#9654; Play</a></td>
+        </tr>`;
       });
 
-      let html = '';
-      for (const [genre, files] of Object.entries(grouped)) {
-        const icon = genreIcons[genre] || '&#9835;';
-        const name = genreNames[genre] || genre;
-        const isNew = genre === 'videogame' || genre === 'movie';
-        html += `<div class="genre-section">
-          <div class="genre-title">${icon} ${name} ${isNew ? '<span class="new-badge">NEW!</span>' : ''}</div>
-          <table class="midi-table">
-            <tr><th>Title</th><th>File</th><th>Size</th><th></th></tr>`;
-        files.forEach(f => {
-          const sizeKb = Math.floor(8 + Math.random() * 42);
-          html += `<tr>
-            <td>${f.title}</td>
-            <td><a class="dl-link" href="${f.proxyUrl}" data-midi-title="${f.title}" data-midi-file="${f.filename}" data-midi-url="${f.proxyUrl}">${f.filename}</a></td>
-            <td class="size-col">${sizeKb} KB</td>
-            <td><a class="play-link" href="${f.proxyUrl}" data-midi-title="${f.title}" data-midi-url="${f.proxyUrl}">&#9654; Play</a></td>
-          </tr>`;
-        });
-        html += '</table></div>';
-      }
+      html += '</table>';
       document.getElementById('results').innerHTML = html;
     }
 
-    function filterGenre(genre) {
-      if (genre === 'all') {
-        renderMidis(allMidis);
-      } else {
-        renderMidis(allMidis.filter(m => m.genre === genre));
-      }
-    }
-
-    function searchMidis() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      if (!q) return renderMidis(allMidis);
-      renderMidis(allMidis.filter(m =>
-        m.title.toLowerCase().includes(q) || m.filename.toLowerCase().includes(q)
-      ));
-    }
-
     document.getElementById('searchInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') searchMidis();
+      if (e.key === 'Enter') doSearch();
     });
 
-    loadCatalog();
+    // Auto-search if URL has a hash query
+    if (location.hash) {
+      const q = decodeURIComponent(location.hash.substring(1));
+      document.getElementById('searchInput').value = q;
+      doSearch();
+    }
   </script>
 </body>
 </html>

@@ -439,14 +439,11 @@ const MyComputer = {
 const MediaPlayer = {
   _currentWin: null,
   _audioCtx: null,
-  _midiPlayer: null,
-  _instruments: {},
   _isPlaying: false,
-  _animFrame: null,
-  _activeNotes: new Map(),
+  _tickTimer: null,
+  _volume: 0.7,
 
   async open(filename, midiUrl, title) {
-    // Close existing player
     if (this._currentWin && document.contains(this._currentWin.el)) {
       this.stop();
       WindowManager.closeWindow(this._currentWin.id);
@@ -457,14 +454,13 @@ const MediaPlayer = {
     this._currentWin = WindowManager.createGenericWindow(
       'Windows Media Player',
       this._buildHtml(displayTitle, filename),
-      { icon: '&#9654;', width: '380px', height: '280px' }
+      { icon: '&#9654;', width: '340px', height: '200px' }
     );
 
     const contentEl = this._currentWin.el.querySelector('.browser-content');
     if (contentEl) { contentEl.style.padding = '0'; contentEl.style.overflow = 'hidden'; }
 
     this._wireControls(midiUrl, displayTitle);
-    // Auto-play
     this._loadAndPlay(midiUrl, displayTitle);
   },
 
@@ -476,12 +472,9 @@ const MediaPlayer = {
         <span class="wmp-menu-item">Play</span>
         <span class="wmp-menu-item">Help</span>
       </div>
-      <div class="wmp-viz">
-        <canvas class="wmp-viz-canvas" width="360" height="100"></canvas>
-        <div class="wmp-viz-overlay">
-          <div class="wmp-viz-title">${title}</div>
-          <div class="wmp-viz-status">Loading...</div>
-        </div>
+      <div class="wmp-display">
+        <div class="wmp-display-title">${title}</div>
+        <div class="wmp-display-status">Loading...</div>
       </div>
       <div class="wmp-seekbar">
         <div class="wmp-seek-track">
@@ -494,10 +487,8 @@ const MediaPlayer = {
         </div>
       </div>
       <div class="wmp-controls">
-        <button class="wmp-ctrl-btn wmp-btn-prev" title="Previous">&#9198;</button>
         <button class="wmp-ctrl-btn wmp-btn-stop" title="Stop">&#9632;</button>
         <button class="wmp-ctrl-btn wmp-btn-play" title="Play">&#9654;</button>
-        <button class="wmp-ctrl-btn wmp-btn-next" title="Next">&#9197;</button>
         <div class="wmp-vol">
           <span class="wmp-vol-icon">&#128264;</span>
           <input type="range" class="wmp-vol-slider" min="0" max="100" value="70">
@@ -520,13 +511,11 @@ const MediaPlayer = {
       if (this._isPlaying) {
         this.pause();
         playBtn.textContent = '\u25B6';
-      } else {
-        if (this._midiData) {
-          this.resume();
-        } else {
-          this._loadAndPlay(midiUrl, title);
-        }
+      } else if (this._parsedNotes) {
+        this.resume();
         playBtn.textContent = '\u275A\u275A';
+      } else {
+        this._loadAndPlay(midiUrl, title);
       }
     });
 
@@ -542,202 +531,167 @@ const MediaPlayer = {
       });
     }
 
-    // Cleanup on window close
-    const origClose = this._currentWin.el.querySelector('.win-close');
-    if (origClose) {
-      const origHandler = origClose.onclick;
-      origClose.addEventListener('click', () => this.stop());
-    }
+    el.querySelector('.win-close')?.addEventListener('click', () => this.stop());
   },
 
   async _loadAndPlay(midiUrl, title) {
     const el = this._currentWin?.el;
     if (!el) return;
-
-    const statusEl = el.querySelector('.wmp-viz-status');
+    const statusEl = el.querySelector('.wmp-display-status');
     const playBtn = el.querySelector('.wmp-btn-play');
 
     try {
       if (statusEl) statusEl.textContent = 'Buffering...';
 
-      // Initialize Web Audio
       if (!this._audioCtx) {
         this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      if (this._audioCtx.state === 'suspended') {
-        await this._audioCtx.resume();
-      }
+      if (this._audioCtx.state === 'suspended') await this._audioCtx.resume();
 
       this._gainNode = this._audioCtx.createGain();
-      this._gainNode.gain.value = this._volume || 0.7;
+      this._gainNode.gain.value = this._volume;
       this._gainNode.connect(this._audioCtx.destination);
 
-      // Fetch the MIDI file
       if (statusEl) statusEl.textContent = 'Loading MIDI...';
       const resp = await fetch(midiUrl);
       if (!resp.ok) throw new Error('Failed to fetch MIDI');
       const arrayBuf = await resp.arrayBuffer();
-      this._midiData = new Uint8Array(arrayBuf);
+      const midiData = new Uint8Array(arrayBuf);
 
-      // Parse MIDI and play using simple synth
-      if (statusEl) statusEl.textContent = 'Playing';
+      // Parse MIDI into note list
+      this._parsedNotes = this._parseMidi(midiData);
+      if (!this._parsedNotes || this._parsedNotes.length === 0) {
+        throw new Error('No notes found in MIDI');
+      }
+
+      // Sort by time
+      this._parsedNotes.sort((a, b) => a.time - b.time);
+      this._totalDuration = this._parsedNotes[this._parsedNotes.length - 1].time + 0.5;
+      this._noteIndex = 0;
+      this._playbackStart = this._audioCtx.currentTime;
+      this._pauseOffset = 0;
       this._isPlaying = true;
-      if (playBtn) playBtn.textContent = '\u275A\u275A';
 
-      this._scheduledNotes = [];
-      this._totalDuration = 0;
-      this._parseMidiAndPlay(this._midiData);
-      this._startViz();
+      if (playBtn) playBtn.textContent = '\u275A\u275A';
+      if (statusEl) statusEl.textContent = 'Playing';
+
+      const totalEl = el.querySelector('.wmp-time-total');
+      if (totalEl) totalEl.textContent = this._formatTime(this._totalDuration);
+
+      // Start the rolling scheduler
+      this._startScheduler();
     } catch (err) {
       console.error('MediaPlayer error:', err);
       if (statusEl) statusEl.textContent = 'Error: ' + err.message;
     }
   },
 
-  _parseMidiAndPlay(data) {
-    // Simple MIDI parser — extract note events and schedule them
-    const midi = this._parseMidi(data);
-    if (!midi || !midi.tracks) {
-      this._scheduledNotes = [];
-      this._totalDuration = 0;
-      return;
-    }
+  _startScheduler() {
+    // Schedule notes in small batches, look 0.5s ahead
+    const LOOK_AHEAD = 0.5;
 
-    this._scheduledNotes = [];
-    this._totalDuration = 0;
-    this._startTime = this._audioCtx.currentTime;
+    const tick = () => {
+      if (!this._isPlaying) return;
 
-    const ticksPerBeat = midi.header.ticksPerBeat || 480;
-    let tempo = 500000; // default 120 BPM
+      const ctx = this._audioCtx;
+      const elapsed = ctx.currentTime - this._playbackStart + this._pauseOffset;
 
-    for (const track of midi.tracks) {
-      let tick = 0;
-      for (const event of track) {
-        tick += event.deltaTime;
-        if (event.type === 'meta' && event.subtype === 'setTempo') {
-          tempo = event.microsecondsPerBeat;
+      // Schedule notes within the look-ahead window
+      while (this._noteIndex < this._parsedNotes.length) {
+        const note = this._parsedNotes[this._noteIndex];
+        if (note.time > elapsed + LOOK_AHEAD) break;
+
+        const playAt = this._playbackStart - this._pauseOffset + note.time;
+        if (playAt > ctx.currentTime - 0.05) {
+          this._playNote(note, playAt);
         }
-        if (event.type === 'channel') {
-          const timeSeconds = (tick / ticksPerBeat) * (tempo / 1000000);
-          if (event.subtype === 'noteOn' && event.velocity > 0) {
-            this._scheduledNotes.push({
-              time: timeSeconds,
-              note: event.noteNumber,
-              velocity: event.velocity,
-              channel: event.channel,
-            });
-            if (timeSeconds > this._totalDuration) this._totalDuration = timeSeconds;
-          }
-        }
+        this._noteIndex++;
       }
-    }
 
-    // Schedule all notes
-    this._scheduleNotes();
+      // Update UI
+      const progress = Math.min(1, elapsed / this._totalDuration);
+      const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
+      if (seekFill) seekFill.style.width = (progress * 100) + '%';
+      const timeEl = this._currentWin?.el?.querySelector('.wmp-time-current');
+      if (timeEl) timeEl.textContent = this._formatTime(elapsed);
 
-    // Update total time display
-    const totalEl = this._currentWin?.el?.querySelector('.wmp-time-total');
-    if (totalEl) totalEl.textContent = this._formatTime(this._totalDuration);
+      // Check if done
+      if (elapsed >= this._totalDuration + 1) {
+        this._isPlaying = false;
+        const playBtn = this._currentWin?.el?.querySelector('.wmp-btn-play');
+        if (playBtn) playBtn.textContent = '\u25B6';
+        const statusEl = this._currentWin?.el?.querySelector('.wmp-display-status');
+        if (statusEl) statusEl.textContent = 'Stopped';
+        return;
+      }
+
+      this._tickTimer = setTimeout(tick, 50);
+    };
+    tick();
   },
 
-  _scheduleNotes() {
-    // Stop any previous scheduling
-    this._scheduledOscillators = [];
+  _playNote(note, time) {
     const ctx = this._audioCtx;
-    const startTime = this._startTime;
+    const freq = 440 * Math.pow(2, (note.note - 69) / 12);
+    const vel = note.velocity / 127;
+    const dur = note.duration || 0.15;
 
-    // Use a simple FM synth for MIDI-like sound
-    for (const note of this._scheduledNotes) {
-      const freq = 440 * Math.pow(2, (note.note - 69) / 12);
-      const time = startTime + note.time;
-      const duration = 0.2; // Fixed note duration
-      const vel = note.velocity / 127;
+    // Skip percussion channel (10) for cleaner sound
+    if (note.channel === 9) return;
 
-      // Skip if in the past
-      if (time + duration < ctx.currentTime) continue;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const modOsc = ctx.createOscillator();
-      const modGain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
 
-      // FM synthesis for richer MIDI sound
-      modOsc.frequency.value = freq * 2;
-      modGain.gain.value = freq * 0.5;
-      modOsc.connect(modGain);
-      modGain.connect(osc.frequency);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(vel * 0.12, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
-      osc.type = note.channel === 9 ? 'square' : 'triangle';
-      osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(this._gainNode);
 
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(vel * 0.15, time + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
-      osc.connect(gain);
-      gain.connect(this._gainNode);
-
-      osc.start(time);
-      osc.stop(time + duration + 0.05);
-      modOsc.start(time);
-      modOsc.stop(time + duration + 0.05);
-
-      this._scheduledOscillators.push({ osc, modOsc, gain, time, note: note.note });
-    }
-
-    // Auto-stop at end
-    this._endTimeout = setTimeout(() => {
-      this._isPlaying = false;
-      const playBtn = this._currentWin?.el?.querySelector('.wmp-btn-play');
-      if (playBtn) playBtn.textContent = '\u25B6';
-      const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
-      if (statusEl) statusEl.textContent = 'Stopped';
-    }, (this._totalDuration + 1) * 1000);
+    osc.start(time);
+    osc.stop(time + dur + 0.02);
   },
 
   _parseMidi(data) {
-    // Minimal MIDI file parser
     let pos = 0;
     const view = new DataView(data.buffer);
 
-    function readStr(len) {
-      let s = '';
-      for (let i = 0; i < len; i++) s += String.fromCharCode(data[pos++]);
-      return s;
-    }
+    function readStr(n) { let s = ''; for (let i = 0; i < n; i++) s += String.fromCharCode(data[pos++]); return s; }
     function read16() { const v = view.getUint16(pos); pos += 2; return v; }
     function read32() { const v = view.getUint32(pos); pos += 4; return v; }
     function readVarLen() {
-      let result = 0;
-      let b;
-      do {
-        b = data[pos++];
-        result = (result << 7) | (b & 0x7f);
-      } while (b & 0x80);
-      return result;
+      let r = 0, b;
+      do { b = data[pos++]; r = (r << 7) | (b & 0x7f); } while (b & 0x80);
+      return r;
     }
 
-    // Header
-    const headerChunk = readStr(4);
-    if (headerChunk !== 'MThd') return null;
-    read32(); // header length
+    if (readStr(4) !== 'MThd') return null;
+    read32();
     const format = read16();
     const numTracks = read16();
     const ticksPerBeat = read16();
 
-    const tracks = [];
+    // Collect all note events with absolute times across all tracks
+    const allNotes = [];
+    // Track tempo changes globally (from track 0 in format 1)
+    const tempoMap = [{ tick: 0, tempo: 500000 }];
 
     for (let t = 0; t < numTracks; t++) {
       if (pos >= data.length) break;
-      const trackChunk = readStr(4);
-      if (trackChunk !== 'MTrk') { pos += read32(); continue; }
+      if (readStr(4) !== 'MTrk') { pos += read32(); continue; }
       const trackLen = read32();
       const trackEnd = pos + trackLen;
-      const events = [];
+      let tick = 0;
       let runningStatus = 0;
+      const noteOns = {}; // track active notes for duration calc
 
       while (pos < trackEnd && pos < data.length) {
         const deltaTime = readVarLen();
+        tick += deltaTime;
         let statusByte = data[pos];
 
         if (statusByte < 0x80) {
@@ -751,101 +705,80 @@ const MediaPlayer = {
         const channel = statusByte & 0x0f;
 
         if (statusByte === 0xff) {
-          // Meta event
           const metaType = data[pos++];
           const metaLen = readVarLen();
           if (metaType === 0x51 && metaLen === 3) {
-            const microsecondsPerBeat = (data[pos] << 16) | (data[pos + 1] << 8) | data[pos + 2];
-            events.push({ deltaTime, type: 'meta', subtype: 'setTempo', microsecondsPerBeat });
+            const usPerBeat = (data[pos] << 16) | (data[pos + 1] << 8) | data[pos + 2];
+            tempoMap.push({ tick, tempo: usPerBeat });
           }
           pos += metaLen;
         } else if (statusByte === 0xf0 || statusByte === 0xf7) {
-          // SysEx
-          const len = readVarLen();
-          pos += len;
-          events.push({ deltaTime, type: 'sysex' });
-        } else if (eventType === 0x8 || eventType === 0x9) {
-          // Note Off / Note On
-          const noteNumber = data[pos++];
+          pos += readVarLen();
+        } else if (eventType === 0x9) {
+          const noteNum = data[pos++];
           const velocity = data[pos++];
-          events.push({
-            deltaTime,
-            type: 'channel',
-            subtype: eventType === 0x9 ? 'noteOn' : 'noteOff',
-            channel,
-            noteNumber,
-            velocity,
-          });
-        } else if (eventType === 0xa) {
-          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'aftertouch' });
-        } else if (eventType === 0xb) {
-          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'controller' });
-        } else if (eventType === 0xc) {
-          pos += 1; events.push({ deltaTime, type: 'channel', subtype: 'programChange' });
-        } else if (eventType === 0xd) {
-          pos += 1; events.push({ deltaTime, type: 'channel', subtype: 'channelAftertouch' });
-        } else if (eventType === 0xe) {
-          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'pitchBend' });
+          if (velocity > 0) {
+            const key = `${channel}-${noteNum}`;
+            noteOns[key] = { tick, noteNum, velocity, channel };
+          } else {
+            // Note on with vel 0 = note off
+            const key = `${channel}-${noteNum}`;
+            if (noteOns[key]) {
+              noteOns[key].offTick = tick;
+              allNotes.push({ ...noteOns[key] });
+              delete noteOns[key];
+            }
+          }
+        } else if (eventType === 0x8) {
+          const noteNum = data[pos++];
+          data[pos++]; // velocity (ignored for off)
+          const key = `${channel}-${noteNum}`;
+          if (noteOns[key]) {
+            noteOns[key].offTick = tick;
+            allNotes.push({ ...noteOns[key] });
+            delete noteOns[key];
+          }
+        } else if (eventType === 0xa || eventType === 0xb || eventType === 0xe) {
+          pos += 2;
+        } else if (eventType === 0xc || eventType === 0xd) {
+          pos += 1;
         } else {
-          // Unknown, try to skip
           break;
         }
       }
+      // Flush any remaining note-ons (give them a default duration)
+      for (const key of Object.keys(noteOns)) {
+        noteOns[key].offTick = noteOns[key].tick + ticksPerBeat;
+        allNotes.push({ ...noteOns[key] });
+      }
       pos = trackEnd;
-      tracks.push(events);
     }
 
-    return { header: { format, numTracks, ticksPerBeat }, tracks };
-  },
+    // Sort tempo map
+    tempoMap.sort((a, b) => a.tick - b.tick);
 
-  _startViz() {
-    const canvas = this._currentWin?.el?.querySelector('.wmp-viz-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
-    const draw = () => {
-      if (!this._isPlaying) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, width, height);
-        return;
+    // Convert ticks to seconds using tempo map
+    function tickToSeconds(tick) {
+      let seconds = 0;
+      let prevTick = 0;
+      let tempo = 500000;
+      for (const tc of tempoMap) {
+        if (tc.tick >= tick) break;
+        seconds += ((Math.min(tc.tick, tick) - prevTick) / ticksPerBeat) * (tempo / 1000000);
+        prevTick = tc.tick;
+        tempo = tc.tempo;
       }
+      seconds += ((tick - prevTick) / ticksPerBeat) * (tempo / 1000000);
+      return seconds;
+    }
 
-      ctx.fillStyle = 'rgba(0, 0, 20, 0.3)';
-      ctx.fillRect(0, 0, width, height);
-
-      const elapsed = this._audioCtx.currentTime - this._startTime;
-
-      // Draw bars for recently played notes
-      const visibleNotes = (this._scheduledNotes || []).filter(n =>
-        n.time >= elapsed - 0.5 && n.time <= elapsed + 0.1
-      );
-
-      for (const note of visibleNotes) {
-        const x = ((note.note - 20) / 90) * width;
-        const barHeight = (note.velocity / 127) * height * 0.8;
-        const age = elapsed - note.time;
-        const alpha = Math.max(0, 1 - age * 2);
-
-        const hue = (note.channel * 30 + note.note * 2) % 360;
-        ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${alpha})`;
-        ctx.fillRect(x, height - barHeight, 4, barHeight);
-      }
-
-      // Update seek bar
-      if (this._totalDuration > 0) {
-        const progress = Math.min(1, elapsed / this._totalDuration);
-        const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
-        if (seekFill) seekFill.style.width = (progress * 100) + '%';
-
-        const timeEl = this._currentWin?.el?.querySelector('.wmp-time-current');
-        if (timeEl) timeEl.textContent = this._formatTime(elapsed);
-      }
-
-      this._animFrame = requestAnimationFrame(draw);
-    };
-    draw();
+    return allNotes.map(n => ({
+      time: tickToSeconds(n.tick),
+      duration: Math.min(2, Math.max(0.05, tickToSeconds(n.offTick || n.tick + ticksPerBeat) - tickToSeconds(n.tick))),
+      note: n.noteNum,
+      velocity: n.velocity,
+      channel: n.channel,
+    }));
   },
 
   _formatTime(secs) {
@@ -856,17 +789,25 @@ const MediaPlayer = {
 
   pause() {
     this._isPlaying = false;
+    this._pauseOffset = this._audioCtx.currentTime - this._playbackStart + this._pauseOffset;
+    if (this._tickTimer) clearTimeout(this._tickTimer);
     if (this._audioCtx) this._audioCtx.suspend();
-    if (this._endTimeout) clearTimeout(this._endTimeout);
-    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-display-status');
     if (statusEl) statusEl.textContent = 'Paused';
   },
 
   resume() {
-    this._isPlaying = true;
     if (this._audioCtx) this._audioCtx.resume();
-    this._startViz();
-    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    this._playbackStart = this._audioCtx.currentTime;
+    // Rewind note index to current position
+    const elapsed = this._pauseOffset;
+    this._noteIndex = 0;
+    while (this._noteIndex < this._parsedNotes.length && this._parsedNotes[this._noteIndex].time < elapsed) {
+      this._noteIndex++;
+    }
+    this._isPlaying = true;
+    this._startScheduler();
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-display-status');
     if (statusEl) statusEl.textContent = 'Playing';
     const playBtn = this._currentWin?.el?.querySelector('.wmp-btn-play');
     if (playBtn) playBtn.textContent = '\u275A\u275A';
@@ -874,25 +815,16 @@ const MediaPlayer = {
 
   stop() {
     this._isPlaying = false;
-    if (this._animFrame) cancelAnimationFrame(this._animFrame);
-    if (this._endTimeout) clearTimeout(this._endTimeout);
-
-    // Stop all scheduled oscillators
-    if (this._scheduledOscillators) {
-      for (const s of this._scheduledOscillators) {
-        try { s.osc.stop(); } catch {}
-        try { s.modOsc.stop(); } catch {}
-      }
-      this._scheduledOscillators = [];
-    }
-
-    this._midiData = null;
+    if (this._tickTimer) clearTimeout(this._tickTimer);
+    this._parsedNotes = null;
+    this._noteIndex = 0;
+    this._pauseOffset = 0;
 
     const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
     if (seekFill) seekFill.style.width = '0%';
     const timeEl = this._currentWin?.el?.querySelector('.wmp-time-current');
     if (timeEl) timeEl.textContent = '0:00';
-    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-display-status');
     if (statusEl) statusEl.textContent = 'Stopped';
   },
 };

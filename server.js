@@ -130,6 +130,37 @@ app.get('/api/midi/play/:genre/:file', (req, res) => {
   }
 });
 
+// MidiWorld.com live search & download
+const { searchMidiWorld, downloadMidi } = require('./server/www/midiworld-service');
+
+app.get('/api/midi/search', async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json({ query: '', results: [] });
+
+  try {
+    const results = await searchMidiWorld(q);
+    res.json({ query: q, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/midi/download/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).send('Invalid ID');
+
+  try {
+    const result = await downloadMidi(id);
+    if (!result) return res.status(404).send('MIDI file not found');
+
+    res.set('Content-Type', 'audio/midi');
+    res.set('Content-Disposition', `inline; filename="${result.filename}"`);
+    res.send(result.buffer);
+  } catch (err) {
+    res.status(500).send('Download failed');
+  }
+});
+
 // mIRC downloads persistence
 const downloadsStore = require('./server/downloads');
 
