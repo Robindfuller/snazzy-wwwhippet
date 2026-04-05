@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
     StartMenu.init();
     updateClock();
     setInterval(updateClock, 30000);
+
+    // Show Settings on first ever run
+    if (!localStorage.getItem('wwwhippet_booted')) {
+      localStorage.setItem('wwwhippet_booted', '1');
+      setTimeout(() => SettingsPanel.open(), 500);
+    }
   });
 
   // Desktop icon — double click to open new browser
