@@ -240,8 +240,14 @@ const ICQ = {
       if (typingEl) typingEl.textContent = '';
 
       if (data.reply) {
-        // Add small delay for realism
-        await new Promise(r => setTimeout(r, 500 + Math.random() * 1500));
+        // Simulate typing time — roughly 40-80ms per character plus a think delay
+        const thinkDelay = 1000 + Math.random() * 2000;
+        const typeDelay = data.reply.length * (40 + Math.random() * 40);
+        const totalDelay = Math.min(thinkDelay + typeDelay, 8000); // cap at 8 seconds
+
+        // Show typing indicator during the simulated typing
+        if (typingEl) typingEl.textContent = `${contactNick} is typing...`;
+        await new Promise(r => setTimeout(r, totalDelay));
 
         const replyMsg = { from: contactNick, text: data.reply, time: this._ts() };
         history.push(replyMsg);
@@ -274,7 +280,16 @@ const ICQ = {
     // Only send if no history yet
     if (history.length > 0) return;
 
-    const greetMsg = { from: contactNick, text: 'yo eggnog u there?? got a question', time: this._ts() };
+    const greetings = [
+      'yo eggnog u there?? got a question',
+      'hey are you about',
+      'eggnog you there',
+      'hello?',
+      'hey whats up',
+      'you online?',
+    ];
+    const text = greetings[Math.floor(Math.random() * greetings.length)];
+    const greetMsg = { from: contactNick, text, time: this._ts() };
     history.push(greetMsg);
 
     // Play sound
