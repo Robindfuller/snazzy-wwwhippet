@@ -1033,9 +1033,184 @@ const MircClient = {
   },
 };
 
-// Expose open function for app.js
+// ============================================================
+// MircDialup — Win95 "Connect To" dialog shown before opening mIRC
+// ============================================================
+
+const MircDialup = {
+  winState: null,
+
+  show(onConnected) {
+    if (this.winState && document.contains(this.winState.el)) {
+      WindowManager.focusWindow(this.winState.id);
+      return;
+    }
+    this.winState = WindowManager.createGenericWindow(
+      'Connect To',
+      this._buildHtml(),
+      { icon: '&#128222;', width: '320px', height: 'auto' }
+    );
+    const content = this.winState.el.querySelector('.browser-content');
+    if (content) content.style.padding = '0';
+    this._wireEvents(onConnected);
+  },
+
+  _buildHtml() {
+    const user = typeof MircClient !== 'undefined' ? MircClient.myNick : 'user_1234';
+    return `<style>
+      .mcd { padding: 10px 12px; background: #c0c0c0; font-family: 'MS Sans Serif', Arial, sans-serif; font-size: 11px; }
+      .mcd-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .mcd-header-icon { font-size: 28px; line-height: 1; }
+      .mcd-header-text { font-weight: bold; font-size: 12px; }
+      .mcd-header-sub { font-size: 10px; color: #444; }
+      .mcd-sep { height: 1px; background: #808080; border-bottom: 1px solid #fff; margin: 8px 0; }
+      .mcd-row { display: flex; align-items: center; margin-bottom: 5px; gap: 6px; }
+      .mcd-label { width: 88px; text-align: right; flex-shrink: 0; }
+      .mcd-input { flex: 1; border: 2px inset #c0c0c0; padding: 1px 3px; font-family: 'MS Sans Serif', Arial, sans-serif; font-size: 11px; background: #fff; }
+      .mcd-check-row { display: flex; align-items: center; gap: 4px; margin: 4px 0 4px 96px; font-size: 11px; }
+      .mcd-btns { display: flex; justify-content: flex-end; gap: 5px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #808080; }
+      .mcd-btn { background: #c0c0c0; border: 2px outset #c0c0c0; padding: 3px 14px; font-family: inherit; font-size: 11px; cursor: pointer; min-width: 72px; }
+      .mcd-btn:active { border-style: inset; }
+      .mcd-btn:disabled { color: #808080; cursor: default; }
+      .mcd-log-area { display: none; border: 2px inset #c0c0c0; background: #000; color: #00ff00; font-family: 'Courier New', monospace; font-size: 10px; padding: 4px; height: 90px; overflow-y: auto; margin: 6px 0; }
+      .mcd-log-area.visible { display: block; }
+      .mcd-status { font-weight: bold; color: #000080; margin: 4px 0; min-height: 14px; font-size: 11px; }
+    </style>
+    <div class="mcd">
+      <div class="mcd-header">
+        <div class="mcd-header-icon">&#128222;</div>
+        <div>
+          <div class="mcd-header-text">WWWhippet! Online Services</div>
+          <div class="mcd-header-sub">Dial-Up Connection</div>
+        </div>
+      </div>
+      <div class="mcd-sep"></div>
+      <div class="mcd-row">
+        <span class="mcd-label">User name:</span>
+        <input class="mcd-input" id="mcdUser" value="${user}" autocomplete="off">
+      </div>
+      <div class="mcd-row">
+        <span class="mcd-label">Password:</span>
+        <input class="mcd-input" id="mcdPass" type="password" value="hunter2" autocomplete="off">
+      </div>
+      <div class="mcd-check-row">
+        <input type="checkbox" id="mcdSavePw" checked>
+        <label for="mcdSavePw">Save password</label>
+      </div>
+      <div class="mcd-sep"></div>
+      <div class="mcd-row">
+        <span class="mcd-label">Phone number:</span>
+        <input class="mcd-input" id="mcdPhone" value="1-800-555-0191" autocomplete="off">
+      </div>
+      <div class="mcd-row">
+        <span class="mcd-label">Dialing from:</span>
+        <input class="mcd-input" value="My Location" readonly>
+      </div>
+      <div class="mcd-status" id="mcdStatus"></div>
+      <div class="mcd-log-area" id="mcdLog"></div>
+      <div class="mcd-btns">
+        <button class="mcd-btn" id="mcdConnect">Connect</button>
+        <button class="mcd-btn" id="mcdCancel">Cancel</button>
+        <button class="mcd-btn" id="mcdProps">Properties...</button>
+      </div>
+    </div>`;
+  },
+
+  _wireEvents(onConnected) {
+    const el = (id) => this.winState.el.querySelector('#' + id);
+    el('mcdCancel').addEventListener('click', () => WindowManager.closeWindow(this.winState.id));
+    el('mcdProps').addEventListener('click', () => {
+      el('mcdStatus').textContent = 'Properties not available in this version.';
+    });
+    el('mcdConnect').addEventListener('click', () => this._doConnect(onConnected));
+    // Enter key in any field triggers connect
+    this.winState.el.querySelectorAll('.mcd-input').forEach(inp => {
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') this._doConnect(onConnected); });
+    });
+  },
+
+  async _doConnect(onConnected) {
+    const el = (id) => this.winState.el.querySelector('#' + id);
+    const connectBtn = el('mcdConnect');
+    const statusEl   = el('mcdStatus');
+    const logEl      = el('mcdLog');
+
+    if (!connectBtn || connectBtn.disabled) return;
+
+    // Disable form
+    connectBtn.disabled = true;
+    el('mcdCancel').textContent = 'Cancel';
+    this.winState.el.querySelectorAll('.mcd-input').forEach(i => i.disabled = true);
+    logEl.classList.add('visible');
+
+    const log = (msg) => { logEl.innerHTML += msg + '<br>'; logEl.scrollTop = logEl.scrollHeight; };
+    const status = (msg) => { if (statusEl) statusEl.textContent = msg; };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // Play dial-up modem sound
+    if (typeof AudioManager !== 'undefined') AudioManager.playDialup();
+
+    const phone = el('mcdPhone')?.value || '1-800-555-0191';
+
+    const stages = [
+      { log: 'Initializing modem...', status: 'Initializing modem...', delay: 700 },
+      { log: 'ATZ', delay: 300 },
+      { log: 'OK', delay: 400 },
+      { log: `ATDT ${phone}`, status: `Dialing ${phone}...`, delay: 900 },
+      { log: 'Dialing...', delay: 1200 },
+      { log: 'RING...', status: 'Calling...', delay: 1400 },
+      { log: 'RING...', delay: 1200 },
+      { log: 'CONNECT 33600', status: 'Connected at 33,600 bps. Verifying...', delay: 700 },
+      { log: 'Verifying username and password...', delay: 1100 },
+      { log: 'Registering your computer on the network...', status: 'Registering your computer on the network...', delay: 1000 },
+      { log: 'CARRIER DETECT', delay: 400 },
+      { log: 'PPP session established', delay: 300 },
+      { log: 'IP address: 10.0.0.' + Math.floor(Math.random() * 254 + 1), delay: 300 },
+    ];
+
+    for (const stage of stages) {
+      if (stage.log)    log(stage.log);
+      if (stage.status) status(stage.status);
+      if (stage.delay)  await sleep(stage.delay);
+    }
+
+    // Set the AI provider on the server
+    try {
+      const provider = (typeof DialUp !== 'undefined' && DialUp.selectedProvider) || 'claude';
+      await fetch('/api/provider', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+    } catch (_) { /* non-fatal */ }
+
+    if (typeof AudioManager !== 'undefined') AudioManager.stopDialup();
+
+    log('Connected!');
+    status('Connected at 33,600 bps');
+
+    // Mark global dial-up state as connected
+    if (typeof DialUp !== 'undefined') {
+      DialUp.connected = true;
+      DialUp.updateIndicator();
+    }
+
+    await sleep(700);
+    WindowManager.closeWindow(this.winState.id);
+    onConnected();
+  },
+};
+
+// ============================================================
+// Expose open functions for app.js / start-menu.js
+// ============================================================
+
 function openMirc() {
-  MircClient.open();
+  if (typeof DialUp !== 'undefined' && DialUp.connected) {
+    MircClient.open();
+  } else {
+    MircDialup.show(() => MircClient.open());
+  }
 }
 
 function openMyComputer() {
