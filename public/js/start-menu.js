@@ -133,6 +133,7 @@ const StartMenu = {
         { icon: '&#127760;', label: 'Whippet Browser', action: 'browser' },
         { icon: '&#9889;',   label: 'mIRC',             action: 'mirc' },
         { icon: '&#127804;', label: 'ICQ',              action: 'icq' },
+        { icon: '&#128128;', label: 'DOOM 95',          action: 'doom' },
         { separator: true },
         { icon: '&#128196;', label: 'GIF Vault',        action: 'gifvault' },
       ];
@@ -159,6 +160,9 @@ const StartMenu = {
         break;
       case 'dialup':
         DialUp.showDialog();
+        break;
+      case 'doom':
+        openDoom();
         break;
       case 'gifvault':
         openNewBrowser('http://www.gifvault.com/');

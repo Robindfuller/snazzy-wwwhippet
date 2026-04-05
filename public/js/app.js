@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
       startupSound.play().catch(() => {});
     } catch {}
 
+    // Apply saved wallpaper
+    const savedWp = localStorage.getItem('wwwhippet_wallpaper');
+    if (savedWp) SettingsPanel.applyWallpaper(savedWp);
+
     AudioManager.init();
     WindowManager.init();
     MenuSystem.init();
@@ -68,6 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ICQ icon
   document.getElementById('iconICQ').addEventListener('dblclick', () => {
     openICQ();
+  });
+
+  // DOOM 95 icon
+  document.getElementById('iconDoom').addEventListener('dblclick', () => {
+    openDoom();
   });
 
 

@@ -45,10 +45,19 @@ const SettingsPanel = {
           font-family: 'Courier New', monospace; font-size: 9px;
           max-height: 32px; overflow-y: auto; margin-top: 4px; white-space: pre-wrap;
         }
+        .wallpaper-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .wallpaper-thumb {
+          width: 100%; aspect-ratio: 4/3; border: 2px inset #c0c0c0; cursor: pointer;
+          position: relative;
+        }
+        .wallpaper-thumb.selected { border: 2px solid #000080; outline: 1px solid #000080; }
+        .wallpaper-thumb:hover { border-color: #000080; }
+        .wallpaper-label { text-align: center; font-size: 9px; margin-top: 1px; }
       </style>
       <div class="settings-body">
         <div class="tabs" id="settingsTabs">
           <button class="tab active" data-tab="general">General</button>
+          <button class="tab" data-tab="display">Display</button>
           <button class="tab" data-tab="providers">Providers</button>
           <button class="tab" data-tab="claude">Claude</button>
           <button class="tab" data-tab="openai">OpenAI</button>
@@ -71,6 +80,13 @@ const SettingsPanel = {
                 <input type="text" id="sCustomUser" placeholder="Enter username...">
               </div>
               <p class="help-text">This sets your identity for mIRC and ICQ. Custom users can chat with all three characters.</p>
+            </fieldset>
+          </div>
+
+          <div class="tab-pane" id="stab-display">
+            <fieldset>
+              <legend>Wallpaper</legend>
+              <div class="wallpaper-grid" id="sWallpaperGrid"></div>
             </fieldset>
           </div>
 
@@ -219,6 +235,9 @@ const SettingsPanel = {
       }
     });
 
+    // Wallpaper picker
+    this._wireWallpaperPicker(root);
+
     // Load settings
     this.loadInto(root);
 
@@ -296,6 +315,44 @@ const SettingsPanel = {
     } catch (err) {
       alert('Error: ' + err.message);
     }
+  },
+
+  WALLPAPERS: [
+    { id: 'teal', name: 'Teal', css: 'background: #008080;' },
+    { id: 'clouds', name: 'Clouds', css: 'background: #008080 url(/img/boot-clouds.png) center center / cover no-repeat;' },
+    { id: 'bricks', name: 'Bricks', css: 'background: repeating-linear-gradient(0deg, #8B4513 0px, #8B4513 12px, #6B3410 12px, #6B3410 14px), repeating-linear-gradient(90deg, #A0522D 0px, #A0522D 30px, #6B3410 30px, #6B3410 32px); background-size: 32px 14px;' },
+    { id: 'checkerboard', name: 'Squares', css: 'background: repeating-conic-gradient(#808080 0% 25%, #c0c0c0 0% 50%) 0 0 / 16px 16px;' },
+    { id: 'zigzag', name: 'Zigzag', css: 'background: linear-gradient(135deg, #006060 25%, transparent 25%) -8px 0, linear-gradient(225deg, #006060 25%, transparent 25%) -8px 0, linear-gradient(315deg, #006060 25%, transparent 25%), linear-gradient(45deg, #006060 25%, transparent 25%); background-size: 16px 16px; background-color: #008080;' },
+    { id: 'houndstooth', name: 'Houndstooth', css: 'background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 0 0 / 20px 20px, repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 10px 10px / 20px 20px; background-color: #808080;' },
+    { id: 'leopard', name: 'Dangerous', css: 'background-color: #D4A017; background-image: radial-gradient(circle 8px, #654321 40%, transparent 40%), radial-gradient(circle 6px, #3B2006 50%, transparent 50%); background-size: 28px 28px, 28px 28px; background-position: 0 0, 14px 14px;' },
+    { id: 'mystery', name: 'Mystery', css: 'background-color: #1a0a2e; background-image: radial-gradient(circle at 30% 50%, #2d1b4e 0%, transparent 50%), radial-gradient(circle at 70% 30%, #3b1f5e 0%, transparent 40%), radial-gradient(circle at 50% 80%, #2a1040 0%, transparent 45%);' },
+    { id: 'science', name: 'Science', css: 'background-color: #001830; background-image: radial-gradient(circle 3px at 20px 20px, #00aaff 100%, transparent), radial-gradient(circle 3px at 50px 35px, #00aaff 100%, transparent), radial-gradient(circle 2px at 35px 10px, #0088cc 100%, transparent); background-size: 60px 50px;' },
+    { id: 'nature', name: 'Nature', css: 'background-color: #2d5a1e; background-image: radial-gradient(ellipse 12px 8px at 15px 15px, #3a7a28 100%, transparent), radial-gradient(ellipse 10px 14px at 40px 25px, #4a8a30 100%, transparent), radial-gradient(ellipse 8px 12px at 25px 35px, #357020 100%, transparent); background-size: 50px 45px;' },
+  ],
+
+  _wireWallpaperPicker(root) {
+    const grid = root.querySelector('#sWallpaperGrid');
+    const current = localStorage.getItem('wwwhippet_wallpaper') || 'teal';
+
+    this.WALLPAPERS.forEach(wp => {
+      const cell = document.createElement('div');
+      cell.innerHTML = `<div class="wallpaper-thumb ${wp.id === current ? 'selected' : ''}" data-wp="${wp.id}" style="${wp.css}"></div><div class="wallpaper-label">${wp.name}</div>`;
+      grid.appendChild(cell);
+
+      cell.querySelector('.wallpaper-thumb').addEventListener('click', () => {
+        grid.querySelectorAll('.wallpaper-thumb').forEach(t => t.classList.remove('selected'));
+        cell.querySelector('.wallpaper-thumb').classList.add('selected');
+        SettingsPanel.applyWallpaper(wp.id);
+        localStorage.setItem('wwwhippet_wallpaper', wp.id);
+      });
+    });
+  },
+
+  applyWallpaper(id) {
+    const wp = this.WALLPAPERS.find(w => w.id === id);
+    if (!wp) return;
+    const desktop = document.getElementById('desktop');
+    if (desktop) desktop.setAttribute('style', wp.css);
   },
 
   async testProvider(root, provider) {
