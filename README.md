@@ -32,7 +32,7 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 3. Type `www.anything-you-want.com` in the address bar
 4. Watch the throbber spin as AI generates a pixel-perfect 90s webpage
 5. Click links. Fall down rabbit holes. Discover someone's Buffy fan shrine. Read a university research page about Java applets. Visit a GeoCities neighbourhood.
-6. Open mIRC. Join `#warez`. Try to download a movie. Get kicked by cuno.
+6. Open mIRC. Join `#warez`. Try to download a movie. Get kicked by Kane.
 7. Lose an hour. No regrets.
 
 Every page is built with **real 90s HTML** — `<table>` layouts, `<font>` tags, `bgcolor` attributes, `<marquee>`, `<blink>`, nested tables within tables within tables. No CSS. No divs. Just like the creator of the original page intended.
@@ -68,9 +68,9 @@ Double-click the mIRC icon on the desktop to open a fully simulated IRC client. 
 
 Every channel has AI-driven personalities that respond dynamically to whatever you type.
 
-**cuno** `@` — Channel op since 1994. Terse, lowercase, zero patience. Will warn you once. Will kick you on principle. Treats his op status as a religion.
+**Kane** `@` — Channel op since 1994. Terse, lowercase, zero patience. Will warn you once. Will kick you on principle. Treats his op status as a religion.
 
-**Phweak!** — Wannabe hacker, full-time cuno fanboy. Drops 2600 references. Piles on whoever cuno is annoyed with. Loves you if cuno loves you; hates you if cuno hates you.
+**Phweak!** — Wannabe hacker, full-time Kane fanboy. Drops 2600 references. Piles on whoever Kane is annoyed with. Loves you if Kane loves you; hates you if Kane hates you.
 
 **eggnog123** — Genuinely nice, absolutely clueless. Asks what's already in the topic. Doesn't know what XDCC is. Apologizes profusely. Repeats the exact same mistake 30 seconds later.
 
