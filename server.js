@@ -98,10 +98,10 @@ app.get('/api/link-map', (req, res) => {
 const mircChat = require('./server/mirc-chat');
 
 app.post('/api/mirc/chat', async (req, res) => {
-  const { channel, message, history } = req.body;
+  const { channel, message, history, userNick } = req.body;
   if (!channel || !message) return res.status(400).json({ error: 'Missing channel or message' });
   try {
-    const responses = await mircChat.generateChatResponse(channel, message, history || []);
+    const responses = await mircChat.generateChatResponse(channel, message, history || [], userNick);
     res.json({ responses });
   } catch (err) {
     res.status(500).json({ error: err.message });

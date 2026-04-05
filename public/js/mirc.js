@@ -8,29 +8,31 @@ const MIRC_CHANNELS = ['#warez', '#mp3z', '#moviez'];
 
 const MIRC_CHANNEL_USERS = {
   '#warez': [
+    { nick: 'cuno',        mode: 'op',  isBot: false },
     { nick: 'WaReZKiNg',  mode: 'op',  isBot: false },
-    { nick: 'd00dz|away',  mode: 'op',  isBot: false },
+    { nick: 'Phweak!',    mode: '',    isBot: false },
     { nick: 'Cr4ck3r',    mode: '',    isBot: false },
     { nick: 'ph33r_me',   mode: '',    isBot: false },
-    { nick: 'xXslayer99Xx', mode: '',  isBot: false },
-    { nick: 'leecher420', mode: '',    isBot: false },
+    { nick: 'eggnog123',  mode: '',    isBot: false },
     { nick: 'xdcc_bot',   mode: 'op',  isBot: true  },
     { nick: 'ReleaseBot', mode: 'op',  isBot: true  },
   ],
   '#mp3z': [
+    { nick: 'cuno',        mode: 'op',  isBot: false },
     { nick: 'SonicRipper', mode: 'op', isBot: false },
-    { nick: 'l33tMP3',     mode: '',   isBot: false },
-    { nick: 'NapsterDood', mode: '',   isBot: false },
+    { nick: 'Phweak!',     mode: '',   isBot: false },
+    { nick: 'eggnog123',   mode: '',   isBot: false },
     { nick: 'mp3_junkie',  mode: '',   isBot: false },
-    { nick: 'Napster_l0ver', mode: '', isBot: false },
+    { nick: 'NapsterDood', mode: '',   isBot: false },
     { nick: 'xdcc_bot2',  mode: 'op',  isBot: true  },
   ],
   '#moviez': [
+    { nick: 'cuno',        mode: 'op',  isBot: false },
     { nick: 'DivXRulez',  mode: 'op',  isBot: false },
-    { nick: 'CAMmaster',  mode: 'op',  isBot: false },
-    { nick: 'CinemaStar', mode: '',    isBot: false },
+    { nick: 'Phweak!',    mode: '',    isBot: false },
+    { nick: 'eggnog123',  mode: '',    isBot: false },
     { nick: 'VCDking',    mode: '',    isBot: false },
-    { nick: 'StarWarsKid99', mode: '', isBot: false },
+    { nick: 'CAMmaster',  mode: '',    isBot: false },
     { nick: 'xdcc_bot3',  mode: 'op',  isBot: true  },
   ],
 };
@@ -89,61 +91,77 @@ const MIRC_PRELOAD = {
   '#warez': [
     { type: 'server', text: '*** Now talking in #warez' },
     { type: 'server', text: '*** Topic is: | NO BEGGING | Ratio 1:3 enforced | Use GetRight | /msg xdcc_bot !list for files |' },
-    { type: 'server', text: '*** Set by WaReZKiNg on Thu Sep 16 22:14:31 1999' },
-    { type: 'join',   nick: 'xdcc_bot',   text: '*** xdcc_bot has joined #warez' },
+    { type: 'server', text: '*** Set by cuno on Thu Sep 16 22:14:31 1999' },
     { type: 'bot',    nick: 'xdcc_bot',   text: '[NEW] The.Matrix.1999.CAM.DivX.avi - 701 MB - /msg xdcc_bot !get 1', xdcc: { bot: 'xdcc_bot', id: 1 } },
     { type: 'bot',    nick: 'xdcc_bot',   text: '[NEW] Quake2.Full.zip - 622 MB - /msg xdcc_bot !get 5', xdcc: { bot: 'xdcc_bot', id: 5 } },
     { type: 'bot',    nick: 'ReleaseBot', text: '** RELEASE ** Counter.Strike.Beta.5.2 [WIN98] [45MB] - /msg xdcc_bot !get 1', xdcc: { bot: 'xdcc_bot', id: 1 } },
-    { type: 'chat',   nick: 'd00dz|away', text: 'omg matrix cam rip just dropped!!!!! brb downloading' },
-    { type: 'chat',   nick: 'Cr4ck3r',   text: 'yea saw it last nite, audio goes out of sync around the helicopter scene' },
-    { type: 'chat',   nick: 'ph33r_me',  text: 'HOW LONG DID IT TAKE ON 56K???? mine keeps disconnecting' },
-    { type: 'chat',   nick: 'WaReZKiNg', text: 'use getright n00b, resumes downloads automatically' },
-    { type: 'chat',   nick: 'd00dz|away', text: 'getright ftw, i left it going all night lol' },
-    { type: 'chat',   nick: 'Cr4ck3r',   text: 'anyone got photoshop 5 serial? the keygen i have is getting flagged by nav' },
-    { type: 'chat',   nick: 'WaReZKiNg', text: 'disable norton before running keygens, it always false positives' },
-    { type: 'join',   nick: 'xXslayer99Xx', text: '*** xXslayer99Xx has joined #warez' },
-    { type: 'chat',   nick: 'WaReZKiNg', text: 'read the topic before asking for anything xXslayer99Xx' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'hey guys!! how do i see what files are available' },
+    { type: 'chat',   nick: 'cuno',       text: 'read the topic' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'lmao dude its literally right there' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'oh! ok so i do /msg xdcc_bot !list?? is that right' },
+    { type: 'chat',   nick: 'cuno',       text: '...' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'omg yes thats what it says haha' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'ok ok sorry!! doing it now!!' },
+    { type: 'chat',   nick: 'Cr4ck3r',    text: 'photoshop 5 serial dropping tonight btw, keep an eye on releases' },
+    { type: 'chat',   nick: 'cuno',       text: 'about time. the keygen has been broken for 2 weeks' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'yea cuno was getting rly pissed about that lol' },
+    { type: 'chat',   nick: 'ph33r_me',   text: 'HOW LONG DID IT TAKE ON 56K???? mine keeps disconnecting from quake2' },
+    { type: 'chat',   nick: 'cuno',       text: 'use getright' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'wait what is getright?? is that a download manager??' },
+    { type: 'chat',   nick: 'cuno',       text: 'eggnog123 i swear to god' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'HAHAHAHA' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'sorry sorry!! ill google it!!' },
     { type: 'bot',    nick: 'xdcc_bot',   text: '[XDCC] Pack #5: 22 gets so far. [Quake2.Full.zip] [622 MB]', xdcc: { bot: 'xdcc_bot', id: 5 } },
-    { type: 'action', nick: 'd00dz|away', text: '* d00dz|away is now known as d00dz|dialup' },
-    { type: 'chat',   nick: 'ph33r_me',  text: 'my mom picked up the phone and killed my 4 hour download aaaaaaaa' },
-    { type: 'chat',   nick: 'Cr4ck3r',   text: 'lmaooo tell her to get off the phone while ur downloading' },
+    { type: 'chat',   nick: 'ph33r_me',   text: 'my mom picked up the phone and killed my 4 hour download aaaaaaaa' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'lmaooo tell ur mom getright resumes it automatically' },
   ],
   '#mp3z': [
     { type: 'server', text: '*** Now talking in #mp3z' },
-    { type: 'server', text: '*** Topic is: | Share or get banned | 128kbps minimum | Use WinAmp 2.8+ | No fake files |' },
-    { type: 'server', text: '*** Set by SonicRipper on Fri Oct 01 19:55:12 1999' },
+    { type: 'server', text: '*** Topic is: | 128kbps minimum | No fake files | Use WinAmp 2.8+ | Share or get banned |' },
+    { type: 'server', text: '*** Set by cuno on Fri Oct 01 19:55:12 1999' },
     { type: 'bot',    nick: 'xdcc_bot2',  text: '[MP3] Eminem-The_Slim_Shady_LP-Full_Album.zip - 42 MB - /msg xdcc_bot2 !get 11', xdcc: { bot: 'xdcc_bot2', id: 11 } },
     { type: 'bot',    nick: 'xdcc_bot2',  text: '[MP3] Nirvana-Nevermind-Full_Album.zip - 38 MB - /msg xdcc_bot2 !get 1', xdcc: { bot: 'xdcc_bot2', id: 1 } },
-    { type: 'chat',   nick: 'l33tMP3',    text: '128kbps is perfectly fine for 56k users imo' },
-    { type: 'chat',   nick: 'SonicRipper', text: '128 sounds like garbage on good headphones, rip at 192 minimum' },
-    { type: 'chat',   nick: 'NapsterDood', text: 'omg napster has EVERYTHING why even do IRC' },
-    { type: 'chat',   nick: 'SonicRipper', text: 'napster quality is trash n00b, people encode at 64kbps and rename it 192' },
-    { type: 'chat',   nick: 'mp3_junkie',  text: 'anyone have the full prodigy - fat of the land album??' },
-    { type: 'chat',   nick: 'l33tMP3',     text: 'whats ur winamp skin? im using the matrix one lol its sick' },
-    { type: 'chat',   nick: 'mp3_junkie',  text: 'milkdrop visualization > everything else, change my mind' },
-    { type: 'join',   nick: 'Napster_l0ver', text: '*** Napster_l0ver has joined #mp3z' },
-    { type: 'chat',   nick: 'SonicRipper', text: 'not another napster refugee lmao' },
-    { type: 'chat',   nick: 'mp3_junkie',  text: 'i have 23847 mp3s on my 15gb drive, almost full need another hd' },
-    { type: 'chat',   nick: 'l33tMP3',     text: 'maxtor 20gb drives are like $120 now, just get one' },
-    { type: 'chat',   nick: 'NapsterDood', text: 'wait how do i actually get files from here?? /msg the bot??' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'hey!! quick question is 128kbps good quality or bad quality' },
+    { type: 'chat',   nick: 'cuno',       text: 'read the topic' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'hahaha topic says 128 minimum, so. figure it out' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'ohhh so its like the minimum!! got it!! thanks cuno ur the best' },
+    { type: 'chat',   nick: 'cuno',       text: "don't" },
+    { type: 'chat',   nick: 'SonicRipper', text: '128 minimum means 192 is ideal. anything less than 192 on headphones sounds like a tin can' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'cuno what bitrate do u encode at' },
+    { type: 'chat',   nick: 'cuno',       text: '256 vbr. only option' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'omg thats so sick. that settles it 256 vbr' },
+    { type: 'chat',   nick: 'mp3_junkie',  text: 'anyone have the full prodigy fat of the land?? cant find it on napster' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'wait what IS napster?? is that like a website' },
+    { type: 'chat',   nick: 'cuno',       text: '...' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'LMAOOO eggnog are you serious right now' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'sorry sorry!! i just got the internet like 2 months ago haha' },
+    { type: 'chat',   nick: 'cuno',       text: 'i am so close' },
   ],
   '#moviez': [
     { type: 'server', text: '*** Now talking in #moviez' },
     { type: 'server', text: '*** Topic is: | DivX 3.11alpha REQUIRED for AVIs | Name releases properly | No sub-600MB DVDRips |' },
-    { type: 'server', text: '*** Set by DivXRulez on Sat Oct 09 01:23:44 1999' },
+    { type: 'server', text: '*** Set by cuno on Sat Oct 09 01:23:44 1999' },
     { type: 'bot',    nick: 'xdcc_bot3',  text: '[MOVIE] The.Matrix.1999.CAM.DivX.avi - 701 MB - /msg xdcc_bot3 !get 1', xdcc: { bot: 'xdcc_bot3', id: 1 } },
     { type: 'bot',    nick: 'xdcc_bot3',  text: '[MOVIE] Fight.Club.1999.DVDRIP.DivX.avi - 702 MB - /msg xdcc_bot3 !get 4', xdcc: { bot: 'xdcc_bot3', id: 4 } },
-    { type: 'chat',   nick: 'DivXRulez',  text: 'matrix encode is 2-pass at 780kbps, looks almost dvd quality' },
-    { type: 'chat',   nick: 'CAMmaster',  text: 'just got back from american beauty, i got a good cam of it' },
-    { type: 'chat',   nick: 'CinemaStar', text: 'how do u even get good quality in dark scenes with a cam??' },
-    { type: 'chat',   nick: 'CAMmaster',  text: 'sony nightshot mode and sit in the back row, takes practice' },
-    { type: 'chat',   nick: 'VCDking',    text: 'vcd still better imo, plays in any standalone dvd player without hacks' },
-    { type: 'chat',   nick: 'DivXRulez',  text: 'get a better dvd player lol, divx 4.0 dropping soon and quality will be insane' },
-    { type: 'chat',   nick: 'CinemaStar', text: 'fight club is incredible btw, fincher outdid himself' },
-    { type: 'chat',   nick: 'CAMmaster',  text: 'yea got a cam of it, dark scenes r rough but the audio is good' },
-    { type: 'join',   nick: 'StarWarsKid99', text: '*** StarWarsKid99 has joined #moviez' },
-    { type: 'chat',   nick: 'VCDking',    text: 'reminder: titanic vcd is 2 discs, make sure u get both parts' },
-    { type: 'chat',   nick: 'DivXRulez',  text: 'titanic in divx on one 700mb cd is way better, proper encode' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'hey!! i downloaded the matrix but when i open it it says codec not found??' },
+    { type: 'chat',   nick: 'cuno',       text: 'install divx 3.11. its in the topic.' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'omg it is literally in the topic lmao' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'ohh ok!! where do i get divx from??' },
+    { type: 'chat',   nick: 'cuno',       text: 'divx.com' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'omg thanks!! also wait is pack 1 the matrix or is that a different one' },
+    { type: 'chat',   nick: 'cuno',       text: 'eggnog123' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'sorry!! nvm i see it now!!' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'hahaha i counted that was like 4 questions in a row' },
+    { type: 'chat',   nick: 'DivXRulez',  text: 'matrix encode is 2-pass 780kbps btw, basically dvd quality at 700mb' },
+    { type: 'chat',   nick: 'cuno',       text: 'good encode. who did it' },
+    { type: 'chat',   nick: 'DivXRulez',  text: 'me. pentium 3 450, took 6 hours' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'thats so sick, p3 450 is so fast' },
+    { type: 'chat',   nick: 'VCDking',    text: 'still think vcd plays better on my standalone player tho no cap' },
+    { type: 'chat',   nick: 'cuno',       text: 'buy a real dvd player' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'wait do i need a dvd player for this or just the codec?? asking for a friend haha' },
+    { type: 'chat',   nick: 'cuno',       text: 'last warning' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'LMAOOOO' },
+    { type: 'chat',   nick: 'eggnog123',  text: 'ok ok ok sorry!!' },
   ],
 };
 
@@ -603,7 +621,8 @@ const MircClient = {
         body: JSON.stringify({
           channel,
           message: userMessage,
-          history: this.history[channel].slice(-8),
+          history: this.history[channel].slice(-10),
+          userNick: this.myNick,
         }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -611,12 +630,38 @@ const MircClient = {
       if (data.responses && Array.isArray(data.responses)) {
         let delay = 0;
         data.responses.forEach(r => {
-          delay += 400 + Math.random() * 800;
+          delay += 500 + Math.random() * 900;
           setTimeout(() => {
-            if (this.winState && document.contains(this.winState.el)) {
+            if (!this.winState || !document.contains(this.winState.el)) return;
+
+            // Handle kick action from cuno
+            if (r.kick) {
+              const target = r.kick;
+              // Show the kick reason message first
               this._addMsg(channel, { type: 'chat', nick: r.nick, text: r.message });
               this.history[channel].push({ nick: r.nick, text: r.message });
+              // Then show the kick server message
+              setTimeout(() => {
+                if (!this.winState || !document.contains(this.winState.el)) return;
+                this._addMsg(channel, { type: 'join', text: `*** cuno has kicked ${target} from ${channel} (${r.message})` });
+                // If eggnog was kicked, have them rejoin after 8-15 seconds
+                if (target === 'eggnog123') {
+                  setTimeout(() => {
+                    if (!this.winState || !document.contains(this.winState.el)) return;
+                    this._addMsg(channel, { type: 'join', text: '*** eggnog123 has joined ' + channel });
+                    setTimeout(() => {
+                      if (!this.winState || !document.contains(this.winState.el)) return;
+                      this._addMsg(channel, { type: 'chat', nick: 'eggnog123', text: 'sorry sorry!! im back!! i wont do it again!!' });
+                      this.history[channel].push({ nick: 'eggnog123', text: 'sorry sorry!! im back!! i wont do it again!!' });
+                    }, 2000);
+                  }, 8000 + Math.random() * 7000);
+                }
+              }, 300);
+              return;
             }
+
+            this._addMsg(channel, { type: 'chat', nick: r.nick, text: r.message });
+            this.history[channel].push({ nick: r.nick, text: r.message });
           }, delay);
         });
       }
