@@ -20,7 +20,27 @@
           <div class="crt-screen">
             <div class="crt-scanlines"></div>
 
-            <div class="desktop" id="desktop">
+            <!-- Boot screen -->
+            <div class="boot-screen" id="bootScreen">
+              <div class="boot-splash">
+                <div class="boot-logo">
+                  <div class="boot-flag">
+                    <span class="flag-r">&#9632;</span><span class="flag-o">&#9632;</span><span class="flag-g">&#9632;</span><span class="flag-b">&#9632;</span>
+                  </div>
+                  <div class="boot-text">
+                    <div class="boot-microsoft">Snazzy</div>
+                    <div class="boot-windows-row">
+                      <span class="boot-windows">WWWhippet!</span><span class="boot-95">95</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="boot-progress-container">
+                <div class="boot-progress-bar" id="bootProgressBar"></div>
+              </div>
+            </div>
+
+            <div class="desktop hidden" id="desktop">
               <!-- Desktop icons -->
               <div class="desktop-icons">
                 <div class="desktop-icon" id="iconMyComputer" title="My Computer">

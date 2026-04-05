@@ -27,6 +27,123 @@ body {
   overflow: hidden;
 }
 
+/* Boot screen */
+.boot-screen {
+  width: 100%;
+  height: 100%;
+  background: #000 url('/img/boot-clouds.png') center center / cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 200;
+}
+
+.boot-screen.hidden {
+  display: none;
+}
+
+.boot-splash {
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.boot-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.boot-flag {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 16px;
+  gap: 6px;
+  border: 12px solid #000;
+  background: #000;
+  transform: rotate(30deg);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.flag-r, .flag-o, .flag-g, .flag-b {
+  font-size: 0;
+  display: block;
+}
+.flag-r { background: #ff0000; }
+.flag-o { background: #00aa00; }
+.flag-g { background: #0000ff; }
+.flag-b { background: #ffcc00; }
+
+.boot-text {
+  text-align: left;
+}
+
+.boot-microsoft {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  color: #000;
+  letter-spacing: 2px;
+  margin-bottom: -6px;
+}
+
+.boot-windows-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.boot-windows {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 38px;
+  font-weight: bold;
+  color: #000;
+}
+
+.boot-95 {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 52px;
+  font-weight: normal;
+  color: #000;
+  margin-left: 2px;
+}
+
+.boot-progress-container {
+  width: 200px;
+  height: 18px;
+  background: #444;
+  border: 1px solid #666;
+  margin: 0 auto;
+  padding: 2px;
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.boot-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    90deg,
+    #0000aa 0px,
+    #0000aa 8px,
+    transparent 8px,
+    transparent 11px
+  );
+  transition: width 0.3s linear;
+}
+
+.desktop.hidden {
+  display: none !important;
+}
+
 /* Desktop fills the CRT screen */
 .desktop {
   width: 100%;
