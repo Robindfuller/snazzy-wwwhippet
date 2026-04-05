@@ -48,14 +48,33 @@ const SettingsPanel = {
       </style>
       <div class="settings-body">
         <div class="tabs" id="settingsTabs">
-          <button class="tab active" data-tab="providers">Providers</button>
+          <button class="tab active" data-tab="general">General</button>
+          <button class="tab" data-tab="providers">Providers</button>
           <button class="tab" data-tab="claude">Claude</button>
           <button class="tab" data-tab="openai">OpenAI</button>
           <button class="tab" data-tab="ollama">Ollama</button>
         </div>
 
         <div class="tab-content">
-          <div class="tab-pane active" id="stab-providers">
+          <div class="tab-pane active" id="stab-general">
+            <fieldset>
+              <legend>User</legend>
+              <label>Logged in as:</label>
+              <select id="sUserSelect" style="width:100%;border:2px inset #c0c0c0;background:#fff;padding:1px 3px;font-family:inherit;font-size:11px;margin-bottom:4px;">
+                <option value="eggnog123">eggnog123</option>
+                <option value="Phweak!">Phweak!</option>
+                <option value="Incon">Incon</option>
+                <option value="_other">Other...</option>
+              </select>
+              <div id="sCustomUserRow" style="display:none;">
+                <label>Custom username:</label>
+                <input type="text" id="sCustomUser" placeholder="Enter username...">
+              </div>
+              <p class="help-text">This sets your identity for mIRC and ICQ. Custom users can chat with all three characters.</p>
+            </fieldset>
+          </div>
+
+          <div class="tab-pane" id="stab-providers">
             <fieldset>
               <legend>Provider Status</legend>
               <div class="provider-row" id="sstatus-claude">
@@ -147,7 +166,7 @@ const SettingsPanel = {
       </div>
     `;
 
-    const winState = WindowManager.createGenericWindow('AI Settings', html, {
+    const winState = WindowManager.createGenericWindow('Settings', html, {
       icon: '&#9881;',
       width: '380px',
       height: '320px',
@@ -163,6 +182,41 @@ const SettingsPanel = {
         tab.classList.add('active');
         root.querySelector('#stab-' + tab.dataset.tab).classList.add('active');
       });
+    });
+
+    // Wire user selector
+    const userSelect = root.querySelector('#sUserSelect');
+    const customRow = root.querySelector('#sCustomUserRow');
+    const customInput = root.querySelector('#sCustomUser');
+
+    // Load current user
+    const currentUser = DialUp.currentUser || 'eggnog123';
+    const isBuiltIn = ['eggnog123', 'Phweak!', 'Incon'].includes(currentUser);
+    if (isBuiltIn) {
+      userSelect.value = currentUser;
+    } else {
+      userSelect.value = '_other';
+      customRow.style.display = 'block';
+      customInput.value = currentUser;
+    }
+
+    userSelect.addEventListener('change', () => {
+      if (userSelect.value === '_other') {
+        customRow.style.display = 'block';
+        customInput.focus();
+      } else {
+        customRow.style.display = 'none';
+        DialUp.currentUser = userSelect.value;
+        localStorage.setItem('wwwhippet_user', userSelect.value);
+      }
+    });
+
+    customInput.addEventListener('input', () => {
+      const val = customInput.value.trim();
+      if (val) {
+        DialUp.currentUser = val;
+        localStorage.setItem('wwwhippet_user', val);
+      }
     });
 
     // Load settings

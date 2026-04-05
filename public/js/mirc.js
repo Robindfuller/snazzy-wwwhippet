@@ -943,7 +943,7 @@ const MediaPlayer = {
 const MircClient = {
   winState: null,
   currentChannel: '#warez',
-  myNick: 'user_' + Math.floor(Math.random() * 8999 + 1000),
+  myNick: null,  // set on open from DialUp.currentUser
 
   // Per-channel chat history (for AI context)
   history: { '#warez': [], '#mp3z': [], '#moviez': [] },
@@ -956,6 +956,11 @@ const MircClient = {
   _aiCooldown: false,
 
   open() {
+    // Set nick from current user
+    if (!this.myNick) {
+      this.myNick = (typeof DialUp !== 'undefined' && DialUp.currentUser) || 'user_' + Math.floor(Math.random() * 8999 + 1000);
+    }
+
     // Singleton — reuse if open
     if (this.winState && document.contains(this.winState.el)) {
       WindowManager.focusWindow(this.winState.id);

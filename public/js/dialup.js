@@ -1,3 +1,10 @@
+// Available users for the whole app
+const APP_USERS = [
+  { id: 'eggnog123', label: 'eggnog123' },
+  { id: 'Phweak!',   label: 'Phweak!' },
+  { id: 'Incon',     label: 'Incon' },
+];
+
 // Dial-Up Networking — must connect before browsing the WWW
 const DialUp = {
   connected: false,
@@ -5,9 +12,13 @@ const DialUp = {
   dialogEl: null,
   providers: [],      // { name, label, configured }
   selectedProvider: null,
+  currentUser: null,
   _onConnectCallbacks: [],
 
   init() {
+    // Load last user from localStorage
+    this.currentUser = localStorage.getItem('wwwhippet_user') || 'eggnog123';
+
     // Desktop icon
     document.getElementById('iconDialup').addEventListener('dblclick', () => this.showDialog());
 
@@ -96,6 +107,7 @@ const DialUp = {
       return `<option value="${p.name}" ${selected}>${p.label}${suffix}</option>`;
     }).join('');
 
+
     const dialog = document.createElement('div');
     dialog.className = 'dialup-dialog';
     dialog.innerHTML = `
@@ -183,7 +195,6 @@ const DialUp = {
 
     const provSelect = this.dialogEl?.querySelector('#dialupProviderSelect');
     if (provSelect) provSelect.disabled = true;
-
     const provider = this.selectedProvider;
     const label = this.getProviderLabel();
 

@@ -43,7 +43,7 @@ const StartMenu = {
         <div class="start-menu-separator"></div>
         <div class="start-menu-item" data-action="settings">
           <span class="start-menu-icon">&#9881;</span>
-          <span class="start-menu-label">AI Settings</span>
+          <span class="start-menu-label">Settings</span>
         </div>
         <div class="start-menu-item" data-action="dialup">
           <span class="start-menu-icon">&#128222;</span>
@@ -132,6 +132,7 @@ const StartMenu = {
       return [
         { icon: '&#127760;', label: 'Whippet Browser', action: 'browser' },
         { icon: '&#9889;',   label: 'mIRC',             action: 'mirc' },
+        { icon: '&#127804;', label: 'ICQ',              action: 'icq' },
         { separator: true },
         { icon: '&#128196;', label: 'GIF Vault',        action: 'gifvault' },
       ];
@@ -146,6 +147,9 @@ const StartMenu = {
         break;
       case 'mirc':
         openMirc();
+        break;
+      case 'icq':
+        openICQ();
         break;
       case 'mycomputer':
         openMyComputer();

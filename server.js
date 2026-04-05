@@ -189,6 +189,20 @@ app.post('/api/mirc/chat', async (req, res) => {
   }
 });
 
+// ICQ AI chat endpoint
+const icqChat = require('./server/icq-chat');
+
+app.post('/api/icq/chat', async (req, res) => {
+  const { user, contact, message, history } = req.body;
+  if (!contact || !message) return res.status(400).json({ error: 'Missing contact or message' });
+  try {
+    const reply = await icqChat.generateICQReply(user, contact, message, history || []);
+    res.json({ reply });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Image proxy - serves external images through our origin to avoid CORS/mixed content
 const imageProxyCache = path.join(__dirname, 'data', 'img-cache');
 const fs = require('fs');

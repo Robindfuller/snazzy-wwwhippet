@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     openMyComputer();
   });
 
+  // ICQ icon
+  document.getElementById('iconICQ').addEventListener('dblclick', () => {
+    openICQ();
+  });
+
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
