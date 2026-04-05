@@ -112,8 +112,8 @@ const MIRC_PRELOAD = {
     { type: 'chat',   nick: 'Phweak!',    text: 'HAHAHAHA' },
     { type: 'chat',   nick: 'eggnog123',  text: 'sorry sorry!! ill google it!!' },
     { type: 'bot',    nick: 'xdcc_bot',   text: '[XDCC] Pack #5: 22 gets so far. [Quake2.Full.zip] [622 MB]', xdcc: { bot: 'xdcc_bot', id: 5 } },
-    { type: 'chat',   nick: 'ph33r_me',   text: 'my mom picked up the phone and killed my 4 hour download aaaaaaaa' },
-    { type: 'chat',   nick: 'Phweak!',    text: 'lmaooo tell ur mom getright resumes it automatically' },
+    { type: 'chat',   nick: 'ph33r_me',   text: 'my mum picked up the phone and killed my 4 hour download aaaaaaaa' },
+    { type: 'chat',   nick: 'Phweak!',    text: 'lmaooo tell ur mum getright resumes it automatically' },
   ],
   '#mp3z': [
     { type: 'server', text: '*** Now talking in #mp3z' },

@@ -111,7 +111,7 @@ const DialUp = {
           </div>
           <div class="dialup-info">
             <font size="1">
-              Phone number: <b>1-800-AI-MODEM</b><br>
+              Phone number: <b>0800-AI-MODEM</b><br>
               ISP: <select id="dialupProviderSelect" class="dialup-provider-select" ${this.connected ? 'disabled' : ''}>
                 ${providerOptions}
               </select>
@@ -194,7 +194,7 @@ const DialUp = {
     const stages = [
       { msg: 'Initializing modem...', delay: 800 },
       { msg: 'ATZ OK', delay: 600 },
-      { msg: 'ATDT 1-800-AI-MODEM', delay: 1000 },
+      { msg: 'ATDT 0800-AI-MODEM', delay: 1000 },
       { msg: 'Dialing...', delay: 2000 },
       { msg: 'RING...', delay: 1500 },
       { msg: 'RING...', delay: 1500 },
