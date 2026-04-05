@@ -239,9 +239,27 @@ const MyComputer = {
 
   addDownload(file) {
     this.downloads.push({ ...file, addedAt: Date.now() });
+    this._saveToServer();
     if (this.winState && document.contains(this.winState.el)) {
       this._refresh();
     }
+  },
+
+  async loadFromServer() {
+    try {
+      const res = await fetch('/api/downloads');
+      if (!res.ok) return;
+      const list = await res.json();
+      if (Array.isArray(list)) this.downloads = list;
+    } catch (_) { /* non-fatal */ }
+  },
+
+  _saveToServer() {
+    fetch('/api/downloads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.downloads),
+    }).catch(() => { /* non-fatal */ });
   },
 
   _buildHtml() {

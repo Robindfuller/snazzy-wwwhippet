@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   WindowManager.init();
   MenuSystem.init();
   DialUp.init();
+  MyComputer.loadFromServer();
 
   // Desktop icon — double click to open new browser
   document.getElementById('iconBrowser').addEventListener('dblclick', () => {

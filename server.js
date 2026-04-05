@@ -94,6 +94,20 @@ app.get('/api/link-map', (req, res) => {
   });
 });
 
+// mIRC downloads persistence
+const downloadsStore = require('./server/downloads');
+
+app.get('/api/downloads', (req, res) => {
+  res.json(downloadsStore.load());
+});
+
+app.post('/api/downloads', (req, res) => {
+  const list = req.body;
+  if (!Array.isArray(list)) return res.status(400).json({ error: 'Expected an array' });
+  downloadsStore.save(list);
+  res.json({ ok: true });
+});
+
 // mIRC AI chat endpoint
 const mircChat = require('./server/mirc-chat');
 
