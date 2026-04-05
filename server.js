@@ -94,6 +94,42 @@ app.get('/api/link-map', (req, res) => {
   });
 });
 
+// MIDI catalog API
+const { MIDI_CATALOG, generateMidiBuffer } = require('./server/www/midi-catalog');
+
+app.get('/api/midi/catalog', (req, res) => {
+  // Flatten catalog into a downloadable list
+  const files = [];
+  for (const [genre, midis] of Object.entries(MIDI_CATALOG)) {
+    for (const midi of midis) {
+      const filename = midi.file + '.mid';
+      const proxyUrl = midi.url
+        ? `/api/img?url=${encodeURIComponent(midi.url)}`
+        : `/api/midi/play/${midi.notes || genre}/${midi.file}.mid`;
+      files.push({
+        genre,
+        title: midi.title,
+        filename,
+        proxyUrl,
+      });
+    }
+  }
+  res.json(files);
+});
+
+// Serve generated MIDI files
+app.get('/api/midi/play/:genre/:file', (req, res) => {
+  const genre = req.params.genre;
+  try {
+    const buffer = generateMidiBuffer(genre);
+    res.set('Content-Type', 'audio/midi');
+    res.set('Content-Disposition', `inline; filename="${req.params.file}"`);
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).send('Failed to generate MIDI');
+  }
+});
+
 // mIRC downloads persistence
 const downloadsStore = require('./server/downloads');
 
@@ -139,7 +175,7 @@ app.get('/api/img', async (req, res) => {
 
   // Serve from disk cache if available
   if (fs.existsSync(cachePath)) {
-    const mimeTypes = { '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.bmp': 'image/bmp' };
+    const mimeTypes = { '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.bmp': 'image/bmp', '.mid': 'audio/midi', '.midi': 'audio/midi' };
     res.set('Content-Type', mimeTypes[ext] || 'image/gif');
     res.set('Cache-Control', 'public, max-age=31536000');
     return res.sendFile(cachePath);
@@ -267,7 +303,7 @@ app.get('/api/progress', async (req, res) => {
   };
 
   // Check for special pages that don't need generation
-  const specialDomains = ['www.wwwhippet.com', 'www.gifvault.com'];
+  const specialDomains = ['www.wwwhippet.com', 'www.gifvault.com', 'www.midifarm.com'];
   if (specialDomains.includes(domain)) {
     send('status', `Contacting ${domain}...`);
     send('done', 'ok');

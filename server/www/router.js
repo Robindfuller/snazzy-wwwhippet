@@ -55,6 +55,11 @@ router.get('*', async (req, res) => {
       return res.sendFile(path.join(__dirname, '..', '..', 'public', 'gifs.html'));
     }
 
+    // 2d. MIDI Farm — serve the local MIDI archive page
+    if (domain === 'www.midifarm.com') {
+      return res.sendFile(path.join(__dirname, '..', '..', 'public', 'midi.html'));
+    }
+
     // 3. Check cache for this URL
     const cached = pageOps.get(provider, fakeUrl);
     if (cached && !cached.expired) {

@@ -324,12 +324,12 @@ const MyComputer = {
   },
 
   _iconFor(type) {
-    const icons = { avi: '🎬', mpg: '🎬', mp3: '🎵', zip: '📦', exe: '⚙️', rar: '📦' };
+    const icons = { avi: '🎬', mpg: '🎬', mp3: '🎵', mid: '🎹', midi: '🎹', zip: '📦', exe: '⚙️', rar: '📦' };
     return icons[type] || '📄';
   },
 
   _typeLabel(type) {
-    const labels = { avi: 'AVI File', mpg: 'MPEG Video', mp3: 'MP3 Audio', zip: 'WinZip Archive', exe: 'Application', rar: 'WinRAR Archive' };
+    const labels = { avi: 'AVI File', mpg: 'MPEG Video', mp3: 'MP3 Audio', mid: 'MIDI Sequence', midi: 'MIDI Sequence', zip: 'WinZip Archive', exe: 'Application', rar: 'WinRAR Archive' };
     return labels[type] || 'File';
   },
 
@@ -370,7 +370,17 @@ const MyComputer = {
       row.addEventListener('dblclick', () => {
         const filename = row.dataset.filename;
         const type = row.dataset.type;
-        this._showCorruptError(filename, type);
+        if (type === 'mid' || type === 'midi') {
+          // Find the download record to get the MIDI URL
+          const dl = this.downloads.find(d => d.name === filename);
+          if (dl && dl.midiUrl) {
+            MediaPlayer.open(filename, dl.midiUrl, dl.midiTitle);
+          } else {
+            this._showCorruptError(filename, type);
+          }
+        } else {
+          this._showCorruptError(filename, type);
+        }
       });
     });
   },
@@ -419,6 +429,471 @@ const MyComputer = {
         detBtn.disabled = true;
       });
     }
+  },
+};
+
+// ============================================================
+// Windows Media Player — retro WMP 6.4 style MIDI player
+// ============================================================
+
+const MediaPlayer = {
+  _currentWin: null,
+  _audioCtx: null,
+  _midiPlayer: null,
+  _instruments: {},
+  _isPlaying: false,
+  _animFrame: null,
+  _activeNotes: new Map(),
+
+  async open(filename, midiUrl, title) {
+    // Close existing player
+    if (this._currentWin && document.contains(this._currentWin.el)) {
+      this.stop();
+      WindowManager.closeWindow(this._currentWin.id);
+    }
+
+    const displayTitle = title || filename.replace(/\.midi?$/i, '');
+
+    this._currentWin = WindowManager.createGenericWindow(
+      'Windows Media Player',
+      this._buildHtml(displayTitle, filename),
+      { icon: '&#9654;', width: '380px', height: '280px' }
+    );
+
+    const contentEl = this._currentWin.el.querySelector('.browser-content');
+    if (contentEl) { contentEl.style.padding = '0'; contentEl.style.overflow = 'hidden'; }
+
+    this._wireControls(midiUrl, displayTitle);
+    // Auto-play
+    this._loadAndPlay(midiUrl, displayTitle);
+  },
+
+  _buildHtml(title, filename) {
+    return `<div class="wmp-body">
+      <div class="wmp-menubar">
+        <span class="wmp-menu-item">File</span>
+        <span class="wmp-menu-item">View</span>
+        <span class="wmp-menu-item">Play</span>
+        <span class="wmp-menu-item">Help</span>
+      </div>
+      <div class="wmp-viz">
+        <canvas class="wmp-viz-canvas" width="360" height="100"></canvas>
+        <div class="wmp-viz-overlay">
+          <div class="wmp-viz-title">${title}</div>
+          <div class="wmp-viz-status">Loading...</div>
+        </div>
+      </div>
+      <div class="wmp-seekbar">
+        <div class="wmp-seek-track">
+          <div class="wmp-seek-fill"></div>
+        </div>
+        <div class="wmp-time">
+          <span class="wmp-time-current">0:00</span>
+          <span class="wmp-time-sep">/</span>
+          <span class="wmp-time-total">0:00</span>
+        </div>
+      </div>
+      <div class="wmp-controls">
+        <button class="wmp-ctrl-btn wmp-btn-prev" title="Previous">&#9198;</button>
+        <button class="wmp-ctrl-btn wmp-btn-stop" title="Stop">&#9632;</button>
+        <button class="wmp-ctrl-btn wmp-btn-play" title="Play">&#9654;</button>
+        <button class="wmp-ctrl-btn wmp-btn-next" title="Next">&#9197;</button>
+        <div class="wmp-vol">
+          <span class="wmp-vol-icon">&#128264;</span>
+          <input type="range" class="wmp-vol-slider" min="0" max="100" value="70">
+        </div>
+      </div>
+      <div class="wmp-statusbar">
+        <span class="wmp-status-text">${filename}</span>
+        <span class="wmp-status-format">MIDI</span>
+      </div>
+    </div>`;
+  },
+
+  _wireControls(midiUrl, title) {
+    const el = this._currentWin.el;
+    const playBtn = el.querySelector('.wmp-btn-play');
+    const stopBtn = el.querySelector('.wmp-btn-stop');
+    const volSlider = el.querySelector('.wmp-vol-slider');
+
+    playBtn.addEventListener('click', () => {
+      if (this._isPlaying) {
+        this.pause();
+        playBtn.textContent = '\u25B6';
+      } else {
+        if (this._midiData) {
+          this.resume();
+        } else {
+          this._loadAndPlay(midiUrl, title);
+        }
+        playBtn.textContent = '\u275A\u275A';
+      }
+    });
+
+    stopBtn.addEventListener('click', () => {
+      this.stop();
+      playBtn.textContent = '\u25B6';
+    });
+
+    if (volSlider) {
+      volSlider.addEventListener('input', () => {
+        this._volume = volSlider.value / 100;
+        if (this._gainNode) this._gainNode.gain.value = this._volume;
+      });
+    }
+
+    // Cleanup on window close
+    const origClose = this._currentWin.el.querySelector('.win-close');
+    if (origClose) {
+      const origHandler = origClose.onclick;
+      origClose.addEventListener('click', () => this.stop());
+    }
+  },
+
+  async _loadAndPlay(midiUrl, title) {
+    const el = this._currentWin?.el;
+    if (!el) return;
+
+    const statusEl = el.querySelector('.wmp-viz-status');
+    const playBtn = el.querySelector('.wmp-btn-play');
+
+    try {
+      if (statusEl) statusEl.textContent = 'Buffering...';
+
+      // Initialize Web Audio
+      if (!this._audioCtx) {
+        this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this._audioCtx.state === 'suspended') {
+        await this._audioCtx.resume();
+      }
+
+      this._gainNode = this._audioCtx.createGain();
+      this._gainNode.gain.value = this._volume || 0.7;
+      this._gainNode.connect(this._audioCtx.destination);
+
+      // Fetch the MIDI file
+      if (statusEl) statusEl.textContent = 'Loading MIDI...';
+      const resp = await fetch(midiUrl);
+      if (!resp.ok) throw new Error('Failed to fetch MIDI');
+      const arrayBuf = await resp.arrayBuffer();
+      this._midiData = new Uint8Array(arrayBuf);
+
+      // Parse MIDI and play using simple synth
+      if (statusEl) statusEl.textContent = 'Playing';
+      this._isPlaying = true;
+      if (playBtn) playBtn.textContent = '\u275A\u275A';
+
+      this._scheduledNotes = [];
+      this._totalDuration = 0;
+      this._parseMidiAndPlay(this._midiData);
+      this._startViz();
+    } catch (err) {
+      console.error('MediaPlayer error:', err);
+      if (statusEl) statusEl.textContent = 'Error: ' + err.message;
+    }
+  },
+
+  _parseMidiAndPlay(data) {
+    // Simple MIDI parser — extract note events and schedule them
+    const midi = this._parseMidi(data);
+    if (!midi || !midi.tracks) {
+      this._scheduledNotes = [];
+      this._totalDuration = 0;
+      return;
+    }
+
+    this._scheduledNotes = [];
+    this._totalDuration = 0;
+    this._startTime = this._audioCtx.currentTime;
+
+    const ticksPerBeat = midi.header.ticksPerBeat || 480;
+    let tempo = 500000; // default 120 BPM
+
+    for (const track of midi.tracks) {
+      let tick = 0;
+      for (const event of track) {
+        tick += event.deltaTime;
+        if (event.type === 'meta' && event.subtype === 'setTempo') {
+          tempo = event.microsecondsPerBeat;
+        }
+        if (event.type === 'channel') {
+          const timeSeconds = (tick / ticksPerBeat) * (tempo / 1000000);
+          if (event.subtype === 'noteOn' && event.velocity > 0) {
+            this._scheduledNotes.push({
+              time: timeSeconds,
+              note: event.noteNumber,
+              velocity: event.velocity,
+              channel: event.channel,
+            });
+            if (timeSeconds > this._totalDuration) this._totalDuration = timeSeconds;
+          }
+        }
+      }
+    }
+
+    // Schedule all notes
+    this._scheduleNotes();
+
+    // Update total time display
+    const totalEl = this._currentWin?.el?.querySelector('.wmp-time-total');
+    if (totalEl) totalEl.textContent = this._formatTime(this._totalDuration);
+  },
+
+  _scheduleNotes() {
+    // Stop any previous scheduling
+    this._scheduledOscillators = [];
+    const ctx = this._audioCtx;
+    const startTime = this._startTime;
+
+    // Use a simple FM synth for MIDI-like sound
+    for (const note of this._scheduledNotes) {
+      const freq = 440 * Math.pow(2, (note.note - 69) / 12);
+      const time = startTime + note.time;
+      const duration = 0.2; // Fixed note duration
+      const vel = note.velocity / 127;
+
+      // Skip if in the past
+      if (time + duration < ctx.currentTime) continue;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const modOsc = ctx.createOscillator();
+      const modGain = ctx.createGain();
+
+      // FM synthesis for richer MIDI sound
+      modOsc.frequency.value = freq * 2;
+      modGain.gain.value = freq * 0.5;
+      modOsc.connect(modGain);
+      modGain.connect(osc.frequency);
+
+      osc.type = note.channel === 9 ? 'square' : 'triangle';
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(vel * 0.15, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(gain);
+      gain.connect(this._gainNode);
+
+      osc.start(time);
+      osc.stop(time + duration + 0.05);
+      modOsc.start(time);
+      modOsc.stop(time + duration + 0.05);
+
+      this._scheduledOscillators.push({ osc, modOsc, gain, time, note: note.note });
+    }
+
+    // Auto-stop at end
+    this._endTimeout = setTimeout(() => {
+      this._isPlaying = false;
+      const playBtn = this._currentWin?.el?.querySelector('.wmp-btn-play');
+      if (playBtn) playBtn.textContent = '\u25B6';
+      const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+      if (statusEl) statusEl.textContent = 'Stopped';
+    }, (this._totalDuration + 1) * 1000);
+  },
+
+  _parseMidi(data) {
+    // Minimal MIDI file parser
+    let pos = 0;
+    const view = new DataView(data.buffer);
+
+    function readStr(len) {
+      let s = '';
+      for (let i = 0; i < len; i++) s += String.fromCharCode(data[pos++]);
+      return s;
+    }
+    function read16() { const v = view.getUint16(pos); pos += 2; return v; }
+    function read32() { const v = view.getUint32(pos); pos += 4; return v; }
+    function readVarLen() {
+      let result = 0;
+      let b;
+      do {
+        b = data[pos++];
+        result = (result << 7) | (b & 0x7f);
+      } while (b & 0x80);
+      return result;
+    }
+
+    // Header
+    const headerChunk = readStr(4);
+    if (headerChunk !== 'MThd') return null;
+    read32(); // header length
+    const format = read16();
+    const numTracks = read16();
+    const ticksPerBeat = read16();
+
+    const tracks = [];
+
+    for (let t = 0; t < numTracks; t++) {
+      if (pos >= data.length) break;
+      const trackChunk = readStr(4);
+      if (trackChunk !== 'MTrk') { pos += read32(); continue; }
+      const trackLen = read32();
+      const trackEnd = pos + trackLen;
+      const events = [];
+      let runningStatus = 0;
+
+      while (pos < trackEnd && pos < data.length) {
+        const deltaTime = readVarLen();
+        let statusByte = data[pos];
+
+        if (statusByte < 0x80) {
+          statusByte = runningStatus;
+        } else {
+          pos++;
+          if (statusByte < 0xf0) runningStatus = statusByte;
+        }
+
+        const eventType = statusByte >> 4;
+        const channel = statusByte & 0x0f;
+
+        if (statusByte === 0xff) {
+          // Meta event
+          const metaType = data[pos++];
+          const metaLen = readVarLen();
+          if (metaType === 0x51 && metaLen === 3) {
+            const microsecondsPerBeat = (data[pos] << 16) | (data[pos + 1] << 8) | data[pos + 2];
+            events.push({ deltaTime, type: 'meta', subtype: 'setTempo', microsecondsPerBeat });
+          }
+          pos += metaLen;
+        } else if (statusByte === 0xf0 || statusByte === 0xf7) {
+          // SysEx
+          const len = readVarLen();
+          pos += len;
+          events.push({ deltaTime, type: 'sysex' });
+        } else if (eventType === 0x8 || eventType === 0x9) {
+          // Note Off / Note On
+          const noteNumber = data[pos++];
+          const velocity = data[pos++];
+          events.push({
+            deltaTime,
+            type: 'channel',
+            subtype: eventType === 0x9 ? 'noteOn' : 'noteOff',
+            channel,
+            noteNumber,
+            velocity,
+          });
+        } else if (eventType === 0xa) {
+          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'aftertouch' });
+        } else if (eventType === 0xb) {
+          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'controller' });
+        } else if (eventType === 0xc) {
+          pos += 1; events.push({ deltaTime, type: 'channel', subtype: 'programChange' });
+        } else if (eventType === 0xd) {
+          pos += 1; events.push({ deltaTime, type: 'channel', subtype: 'channelAftertouch' });
+        } else if (eventType === 0xe) {
+          pos += 2; events.push({ deltaTime, type: 'channel', subtype: 'pitchBend' });
+        } else {
+          // Unknown, try to skip
+          break;
+        }
+      }
+      pos = trackEnd;
+      tracks.push(events);
+    }
+
+    return { header: { format, numTracks, ticksPerBeat }, tracks };
+  },
+
+  _startViz() {
+    const canvas = this._currentWin?.el?.querySelector('.wmp-viz-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const draw = () => {
+      if (!this._isPlaying) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+        return;
+      }
+
+      ctx.fillStyle = 'rgba(0, 0, 20, 0.3)';
+      ctx.fillRect(0, 0, width, height);
+
+      const elapsed = this._audioCtx.currentTime - this._startTime;
+
+      // Draw bars for recently played notes
+      const visibleNotes = (this._scheduledNotes || []).filter(n =>
+        n.time >= elapsed - 0.5 && n.time <= elapsed + 0.1
+      );
+
+      for (const note of visibleNotes) {
+        const x = ((note.note - 20) / 90) * width;
+        const barHeight = (note.velocity / 127) * height * 0.8;
+        const age = elapsed - note.time;
+        const alpha = Math.max(0, 1 - age * 2);
+
+        const hue = (note.channel * 30 + note.note * 2) % 360;
+        ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${alpha})`;
+        ctx.fillRect(x, height - barHeight, 4, barHeight);
+      }
+
+      // Update seek bar
+      if (this._totalDuration > 0) {
+        const progress = Math.min(1, elapsed / this._totalDuration);
+        const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
+        if (seekFill) seekFill.style.width = (progress * 100) + '%';
+
+        const timeEl = this._currentWin?.el?.querySelector('.wmp-time-current');
+        if (timeEl) timeEl.textContent = this._formatTime(elapsed);
+      }
+
+      this._animFrame = requestAnimationFrame(draw);
+    };
+    draw();
+  },
+
+  _formatTime(secs) {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  },
+
+  pause() {
+    this._isPlaying = false;
+    if (this._audioCtx) this._audioCtx.suspend();
+    if (this._endTimeout) clearTimeout(this._endTimeout);
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    if (statusEl) statusEl.textContent = 'Paused';
+  },
+
+  resume() {
+    this._isPlaying = true;
+    if (this._audioCtx) this._audioCtx.resume();
+    this._startViz();
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    if (statusEl) statusEl.textContent = 'Playing';
+    const playBtn = this._currentWin?.el?.querySelector('.wmp-btn-play');
+    if (playBtn) playBtn.textContent = '\u275A\u275A';
+  },
+
+  stop() {
+    this._isPlaying = false;
+    if (this._animFrame) cancelAnimationFrame(this._animFrame);
+    if (this._endTimeout) clearTimeout(this._endTimeout);
+
+    // Stop all scheduled oscillators
+    if (this._scheduledOscillators) {
+      for (const s of this._scheduledOscillators) {
+        try { s.osc.stop(); } catch {}
+        try { s.modOsc.stop(); } catch {}
+      }
+      this._scheduledOscillators = [];
+    }
+
+    this._midiData = null;
+
+    const seekFill = this._currentWin?.el?.querySelector('.wmp-seek-fill');
+    if (seekFill) seekFill.style.width = '0%';
+    const timeEl = this._currentWin?.el?.querySelector('.wmp-time-current');
+    if (timeEl) timeEl.textContent = '0:00';
+    const statusEl = this._currentWin?.el?.querySelector('.wmp-viz-status');
+    if (statusEl) statusEl.textContent = 'Stopped';
   },
 };
 
@@ -742,9 +1217,9 @@ const MircClient = {
 
     // Open DCC progress window
     const dccWin = WindowManager.createGenericWindow(
-      `DCC Receive - ${file.name}`,
-      this._buildDccHtml(file),
-      { icon: '&#8681;', width: '340px', height: '220px' }
+      `DCC Get session`,
+      this._buildDccHtml(file, botNick),
+      { icon: '&#8681;', width: '340px', height: '260px' }
     );
 
     const contentEl = dccWin.el.querySelector('.browser-content');
@@ -753,7 +1228,12 @@ const MircClient = {
     // Animate the progress bar
     const fill = dccWin.el.querySelector('.mirc-dcc-fill');
     const pct = dccWin.el.querySelector('.mirc-dcc-pct');
-    const statsEl = dccWin.el.querySelector('.mirc-dcc-stats');
+    const timeEl = dccWin.el.querySelector('.mirc-dcc-time');
+    const rcvdEl = dccWin.el.querySelector('.mirc-dcc-rcvd');
+    const leftEl = dccWin.el.querySelector('.mirc-dcc-left');
+    const cpsEl = dccWin.el.querySelector('.mirc-dcc-cps');
+    const connStatus = dccWin.el.querySelector('.mirc-dcc-conn-status');
+    const recvStatus = dccWin.el.querySelector('.mirc-dcc-recv-status');
     const cancelBtn = dccWin.el.querySelector('.mirc-dcc-cancel');
     const completeMsg = dccWin.el.querySelector('.mirc-dcc-complete-msg');
 
@@ -777,32 +1257,45 @@ const MircClient = {
     const speeds = [1.8, 2.1, 2.4, 2.9, 3.1, 3.4, 2.8, 3.2, 1.2, 2.7, 3.5, 0.9, 3.1, 2.5];
     let speedIdx = 0;
 
+    const fmtTime = (secs) => {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = Math.floor(secs % 60);
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    };
+
     const timer = setInterval(() => {
       if (cancelled) return;
       progress = Math.min(100, progress + increment + (Math.random() - 0.5) * increment * 0.5);
 
       const elapsed = (Date.now() - startTime) / 1000;
-      const received = (progress / 100) * file.bytes;
+      const received = Math.floor((progress / 100) * file.bytes);
       const speed = speeds[speedIdx % speeds.length];
       speedIdx++;
-      const etaSecs = Math.max(0, Math.round((file.bytes - received) / (speed * 1024)));
-      const etaStr = etaSecs > 3600
-        ? `${Math.floor(etaSecs/3600)}:${String(Math.floor((etaSecs%3600)/60)).padStart(2,'0')}:${String(etaSecs%60).padStart(2,'0')}`
-        : `${Math.floor(etaSecs/60)}:${String(etaSecs%60).padStart(2,'0')}`;
+      const cps = Math.floor(speed * 1024);
+      const etaSecs = Math.max(0, Math.round((file.bytes - received) / cps));
 
-      const receivedStr = received >= 1024*1024*1024
-        ? (received/1024/1024/1024).toFixed(2) + ' GB'
-        : (received/1024/1024).toFixed(1) + ' MB';
+      // Update connection status after first tick
+      if (connStatus && elapsed > 0.5) connStatus.textContent = 'Connection established';
+      if (recvStatus && elapsed > 1) recvStatus.textContent = 'Receiving file...';
+
+      // Update stat cells
+      if (timeEl) timeEl.textContent = fmtTime(elapsed);
+      if (rcvdEl) rcvdEl.textContent = received.toLocaleString();
+      if (leftEl) leftEl.textContent = fmtTime(etaSecs);
+      if (cpsEl) cpsEl.textContent = cps.toLocaleString();
 
       if (fill) fill.style.width = progress.toFixed(1) + '%';
       if (pct) pct.textContent = Math.floor(progress) + '%';
-      if (statsEl) statsEl.textContent = `Received: ${receivedStr} / ${file.size}   Speed: ${speed} KB/s   ETA: ${etaStr}`;
 
       if (progress >= 100) {
         clearInterval(timer);
         if (fill) fill.style.background = '#008000';
         if (pct) pct.textContent = '100%';
-        if (statsEl) statsEl.textContent = `Transfer complete. ${file.size} received at avg ${(Math.random()*1.5+2.1).toFixed(1)} KB/s`;
+        if (rcvdEl) rcvdEl.textContent = file.bytes.toLocaleString();
+        if (leftEl) leftEl.textContent = '00:00:00';
+        if (connStatus) connStatus.textContent = 'Transfer complete';
+        if (recvStatus) recvStatus.textContent = '';
         if (cancelBtn) cancelBtn.textContent = 'Close';
         if (completeMsg) {
           completeMsg.textContent = `\u2714 File saved to C:\\Downloads\\${file.name}`;
@@ -816,17 +1309,28 @@ const MircClient = {
     }, interval);
   },
 
-  _buildDccHtml(file) {
+  _buildDccHtml(file, botNick) {
     return `<div class="mirc-dcc-body">
-      <div class="mirc-dcc-title">&#8681; DCC Receive - ${file.name}</div>
-      <div class="mirc-dcc-row"><span class="mirc-dcc-label">File:</span><span class="mirc-dcc-value" style="word-break:break-all;font-size:10px;">${file.name}</span></div>
-      <div class="mirc-dcc-row"><span class="mirc-dcc-label">Size:</span><span class="mirc-dcc-value">${file.size}</span></div>
-      <div class="mirc-dcc-row"><span class="mirc-dcc-label">Saving to:</span><span class="mirc-dcc-value">C:\\Downloads</span></div>
+      <div class="mirc-dcc-section">
+        <div class="mirc-dcc-title">DCC Get session</div>
+        <div class="mirc-dcc-row"><span class="mirc-dcc-label">From:</span><span class="mirc-dcc-value">${botNick || 'unknown'}</span></div>
+        <div class="mirc-dcc-row"><span class="mirc-dcc-label">File:</span><span class="mirc-dcc-value" style="word-break:break-all;font-size:10px;">${file.name}</span></div>
+        <div class="mirc-dcc-row"><span class="mirc-dcc-label">Size:</span><span class="mirc-dcc-value">${file.bytes.toLocaleString()} bytes</span></div>
+      </div>
+      <div class="mirc-dcc-stats-grid">
+        <div class="mirc-dcc-stat-cell"><span class="mirc-dcc-stat-label">Time:</span><span class="mirc-dcc-stat-val mirc-dcc-time">00:00:00</span></div>
+        <div class="mirc-dcc-stat-cell"><span class="mirc-dcc-stat-label">Rcvd:</span><span class="mirc-dcc-stat-val mirc-dcc-rcvd">0</span></div>
+        <div class="mirc-dcc-stat-cell"><span class="mirc-dcc-stat-label">Left:</span><span class="mirc-dcc-stat-val mirc-dcc-left">--:--:--</span></div>
+        <div class="mirc-dcc-stat-cell"><span class="mirc-dcc-stat-label">Cps:</span><span class="mirc-dcc-stat-val mirc-dcc-cps">0</span></div>
+      </div>
+      <div class="mirc-dcc-status">
+        <div class="mirc-dcc-status-line mirc-dcc-conn-status">Connecting...</div>
+        <div class="mirc-dcc-status-line mirc-dcc-recv-status"></div>
+      </div>
       <div class="mirc-dcc-track">
         <div class="mirc-dcc-fill"></div>
         <div class="mirc-dcc-pct">0%</div>
       </div>
-      <div class="mirc-dcc-stats">Connecting...</div>
       <div class="mirc-dcc-complete-msg" style="display:none;color:#008000;font-weight:bold;margin-top:4px;"></div>
       <div class="mirc-dcc-btns">
         <button class="mirc-dcc-btn mirc-dcc-cancel">Cancel</button>

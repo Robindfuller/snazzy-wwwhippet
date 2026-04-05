@@ -206,6 +206,19 @@ class BrowserInstance {
       const href = link.getAttribute('href');
       if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) return;
       e.preventDefault();
+
+      // Check for MIDI download links
+      const midiUrl = link.dataset?.midiUrl || link.getAttribute('data-midi-url');
+      const midiTitle = link.dataset?.midiTitle || link.getAttribute('data-midi-title');
+      const midiFile = link.dataset?.midiFile || link.getAttribute('data-midi-file');
+      if (midiUrl || (href && href.match(/\.midi?(\?|$)/i))) {
+        const url = midiUrl || href;
+        const filename = midiFile || url.split('/').pop().split('?')[0] || 'unknown.mid';
+        const title = midiTitle || filename.replace('.mid', '');
+        BrowserDownload.startMidiDownload(filename, title, url);
+        return;
+      }
+
       const linkText = link.textContent.trim();
       this.navigateTo(this.resolveHref(href), true, linkText);
     });
@@ -288,6 +301,95 @@ class BrowserInstance {
   startThrobber() { this.throbber?.classList.add('loading'); }
   stopThrobber() { this.throbber?.classList.remove('loading'); }
 }
+
+// Browser download handler — intercepts MIDI file downloads
+const BrowserDownload = {
+  startMidiDownload(filename, title, midiUrl) {
+    const sizeBytes = 8000 + Math.floor(Math.random() * 40000);
+    const sizeStr = (sizeBytes / 1024).toFixed(1) + ' KB';
+    const duration = 3 + Math.random() * 5; // 3-8 seconds for small MIDI files
+
+    const dccWin = WindowManager.createGenericWindow(
+      `Saving: ${filename}`,
+      `<div class="mirc-dcc-body">
+        <div class="mirc-dcc-section">
+          <div class="mirc-dcc-title">Saving from Internet...</div>
+          <div class="mirc-dcc-row"><span class="mirc-dcc-label">File:</span><span class="mirc-dcc-value" style="word-break:break-all;font-size:10px;">${filename}</span></div>
+          <div class="mirc-dcc-row"><span class="mirc-dcc-label">From:</span><span class="mirc-dcc-value">www.midifarm.com</span></div>
+          <div class="mirc-dcc-row"><span class="mirc-dcc-label">Est. time:</span><span class="mirc-dcc-value mirc-dcc-est-time">calculating...</span></div>
+        </div>
+        <div class="mirc-dcc-track">
+          <div class="mirc-dcc-fill"></div>
+          <div class="mirc-dcc-pct">0%</div>
+        </div>
+        <div class="mirc-dcc-complete-msg" style="display:none;color:#008000;font-weight:bold;margin-top:4px;"></div>
+        <div class="mirc-dcc-btns">
+          <button class="mirc-dcc-btn mirc-dcc-cancel">Cancel</button>
+        </div>
+      </div>`,
+      { icon: '&#8681;', width: '320px', height: '200px' }
+    );
+
+    const contentEl = dccWin.el.querySelector('.browser-content');
+    if (contentEl) contentEl.style.padding = '0';
+
+    const fill = dccWin.el.querySelector('.mirc-dcc-fill');
+    const pct = dccWin.el.querySelector('.mirc-dcc-pct');
+    const estTime = dccWin.el.querySelector('.mirc-dcc-est-time');
+    const cancelBtn = dccWin.el.querySelector('.mirc-dcc-cancel');
+    const completeMsg = dccWin.el.querySelector('.mirc-dcc-complete-msg');
+
+    let progress = 0;
+    let cancelled = false;
+    const interval = 200;
+    const steps = (duration * 1000) / interval;
+    const increment = 100 / steps;
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        if (progress >= 100) {
+          WindowManager.closeWindow(dccWin.id);
+        } else {
+          cancelled = true;
+          clearInterval(timer);
+          WindowManager.closeWindow(dccWin.id);
+        }
+      });
+    }
+
+    const timer = setInterval(() => {
+      if (cancelled) return;
+      progress = Math.min(100, progress + increment + (Math.random() - 0.5) * increment * 0.3);
+
+      const remaining = Math.max(0, Math.ceil((100 - progress) / increment * interval / 1000));
+      if (estTime) estTime.textContent = remaining > 0 ? `${remaining} sec (${sizeStr})` : 'finishing...';
+      if (fill) fill.style.width = progress.toFixed(1) + '%';
+      if (pct) pct.textContent = Math.floor(progress) + '%';
+
+      if (progress >= 100) {
+        clearInterval(timer);
+        if (fill) fill.style.background = '#008000';
+        if (pct) pct.textContent = '100%';
+        if (estTime) estTime.textContent = 'Download complete';
+        if (cancelBtn) cancelBtn.textContent = 'Close';
+        if (completeMsg) {
+          completeMsg.textContent = '\u2714 File saved to C:\\Downloads\\' + filename;
+          completeMsg.style.display = 'block';
+        }
+
+        // Add to My Computer downloads with the MIDI URL for playback
+        MyComputer.addDownload({
+          name: filename,
+          size: sizeStr,
+          bytes: sizeBytes,
+          type: 'mid',
+          midiUrl: midiUrl,
+          midiTitle: title,
+        });
+      }
+    }, interval);
+  },
+};
 
 // Legacy global reference for compatibility
 const Browser = {

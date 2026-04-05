@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MIDI Farm - Free MIDI Files!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000033;
+      color: #c0c0c0;
+      font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+      font-size: 11px;
+    }
+    .header {
+      text-align: center;
+      background: #000066;
+      padding: 10px;
+      border-bottom: 3px ridge #4444aa;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      color: #ffff00;
+      text-shadow: 2px 2px 0 #000;
+      letter-spacing: 2px;
+    }
+    .header h1 span { color: #00ff00; }
+    .header p {
+      margin: 4px 0 0;
+      color: #aaa;
+      font-size: 10px;
+    }
+    .counter {
+      font-size: 9px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .nav {
+      background: #000044;
+      padding: 4px 10px;
+      border-bottom: 1px solid #4444aa;
+      text-align: center;
+    }
+    .nav a {
+      color: #00ccff;
+      text-decoration: none;
+      margin: 0 8px;
+      font-size: 11px;
+    }
+    .nav a:hover { color: #ffff00; }
+    .content {
+      padding: 10px;
+    }
+    .genre-section {
+      margin-bottom: 14px;
+    }
+    .genre-title {
+      color: #ffcc00;
+      font-size: 13px;
+      font-weight: bold;
+      border-bottom: 1px solid #333366;
+      padding-bottom: 3px;
+      margin-bottom: 6px;
+    }
+    .genre-title img { vertical-align: middle; margin-right: 4px; }
+    .midi-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #000044;
+    }
+    .midi-table th {
+      background: #000066;
+      color: #aaa;
+      text-align: left;
+      padding: 3px 8px;
+      font-size: 10px;
+      border-bottom: 1px solid #333366;
+    }
+    .midi-table td {
+      padding: 3px 8px;
+      border-bottom: 1px solid #111144;
+      font-size: 11px;
+    }
+    .midi-table tr:hover { background: #000055; }
+    a.dl-link {
+      color: #00ff00;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a.dl-link:hover { color: #ffff00; text-decoration: underline; }
+    a.play-link {
+      color: #00ccff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    a.play-link:hover { color: #ffff00; }
+    .size-col { color: #888; font-size: 10px; }
+    .footer {
+      text-align: center;
+      padding: 10px;
+      border-top: 1px solid #333366;
+      color: #666;
+      font-size: 9px;
+    }
+    .footer a { color: #6666ff; }
+    .new-badge {
+      color: #ff0000;
+      font-weight: bold;
+      font-size: 9px;
+      animation: blink 1s steps(2) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .search-bar {
+      display: flex;
+      gap: 4px;
+      margin: 8px 0;
+      justify-content: center;
+    }
+    .search-bar input {
+      width: 200px;
+      padding: 2px 6px;
+      border: 2px inset #888;
+      background: #fff;
+      font-family: inherit;
+      font-size: 11px;
+    }
+    .search-bar button {
+      padding: 2px 12px;
+      background: #c0c0c0;
+      border: 2px outset #ddd;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .loading { color: #888; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>&#9835; MIDI <span>Farm</span> &#9835;</h1>
+    <p>Your #1 Source for Free MIDI Files on the Web!</p>
+    <div class="counter">Visitors: 48,291 | MIDIs: <span id="midiCount">0</span> files</div>
+  </div>
+  <div class="nav">
+    <a href="#" onclick="filterGenre('all')">All</a> |
+    <a href="#" onclick="filterGenre('rock')">Rock</a> |
+    <a href="#" onclick="filterGenre('pop')">Pop</a> |
+    <a href="#" onclick="filterGenre('movie')">Movie</a> |
+    <a href="#" onclick="filterGenre('classical')">Classical</a> |
+    <a href="#" onclick="filterGenre('tv')">TV Themes</a> |
+    <a href="#" onclick="filterGenre('videogame')">Video Games</a> |
+    <a href="#" onclick="filterGenre('christmas')">Christmas</a>
+  </div>
+  <div class="content">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search MIDI files...">
+      <button onclick="searchMidis()">Search</button>
+    </div>
+    <div id="results">
+      <div class="loading">Loading MIDI catalog...</div>
+    </div>
+  </div>
+  <div class="footer">
+    &copy; 1997-1999 MIDI Farm. All MIDI files are sequenced by fans.<br>
+    <a href="mailto:webmaster@midifarm.com">webmaster@midifarm.com</a> |
+    Best viewed with Netscape Navigator 3.0+
+  </div>
+
+  <script>
+    let allMidis = [];
+    const genreIcons = {
+      rock: '&#127928;', pop: '&#127925;', movie: '&#127916;',
+      classical: '&#127929;', tv: '&#128250;', videogame: '&#127918;',
+      christmas: '&#127876;'
+    };
+    const genreNames = {
+      rock: 'Rock & Classic Rock', pop: 'Pop & Dance',
+      movie: 'Movie Soundtracks', classical: 'Classical',
+      tv: 'TV Themes', videogame: 'Video Game Music',
+      christmas: 'Christmas & Holiday'
+    };
+
+    async function loadCatalog() {
+      try {
+        const res = await fetch('/api/midi/catalog');
+        allMidis = await res.json();
+        document.getElementById('midiCount').textContent = allMidis.length;
+        renderMidis(allMidis);
+      } catch (e) {
+        document.getElementById('results').innerHTML =
+          '<div class="loading">Error loading catalog. Try refreshing.</div>';
+      }
+    }
+
+    function renderMidis(midis) {
+      const grouped = {};
+      midis.forEach(m => {
+        if (!grouped[m.genre]) grouped[m.genre] = [];
+        grouped[m.genre].push(m);
+      });
+
+      let html = '';
+      for (const [genre, files] of Object.entries(grouped)) {
+        const icon = genreIcons[genre] || '&#9835;';
+        const name = genreNames[genre] || genre;
+        const isNew = genre === 'videogame' || genre === 'movie';
+        html += `<div class="genre-section">
+          <div class="genre-title">${icon} ${name} ${isNew ? '<span class="new-badge">NEW!</span>' : ''}</div>
+          <table class="midi-table">
+            <tr><th>Title</th><th>File</th><th>Size</th><th></th></tr>`;
+        files.forEach(f => {
+          const sizeKb = Math.floor(8 + Math.random() * 42);
+          html += `<tr>
+            <td>${f.title}</td>
+            <td><a class="dl-link" href="${f.proxyUrl}" data-midi-title="${f.title}" data-midi-file="${f.filename}" data-midi-url="${f.proxyUrl}">${f.filename}</a></td>
+            <td class="size-col">${sizeKb} KB</td>
+            <td><a class="play-link" href="${f.proxyUrl}" data-midi-title="${f.title}" data-midi-url="${f.proxyUrl}">&#9654; Play</a></td>
+          </tr>`;
+        });
+        html += '</table></div>';
+      }
+      document.getElementById('results').innerHTML = html;
+    }
+
+    function filterGenre(genre) {
+      if (genre === 'all') {
+        renderMidis(allMidis);
+      } else {
+        renderMidis(allMidis.filter(m => m.genre === genre));
+      }
+    }
+
+    function searchMidis() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!q) return renderMidis(allMidis);
+      renderMidis(allMidis.filter(m =>
+        m.title.toLowerCase().includes(q) || m.filename.toLowerCase().includes(q)
+      ));
+    }
+
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') searchMidis();
+    });
+
+    loadCatalog();
+  </script>
+</body>
+</html>
