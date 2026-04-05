@@ -23,7 +23,9 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 - **mIRC client** — live AI-powered IRC with warez channels, XDCC file downloads, and unforgettable regulars
 - **MIDI player** — Windows Media Player 6.4-style MIDI playback with real Web Audio synthesis
 - **GIF Vault** — browse and search real animated GIFs from the 90s web
-- **Settings panel** — swap AI providers on the fly
+- **ICQ** — AI-powered instant messaging with three friends from school, each with distinct personalities and era-authentic chat
+- **DOOM 95** — a playable Wolfenstein-style raycaster with textured walls, sprite enemies, shooting, and a Doom-face HUD
+- **Settings panel** — swap AI providers, pick a desktop wallpaper (tiled patterns, clouds, Plus! themes)
 
 ## The Experience
 
@@ -33,7 +35,9 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 4. Watch the throbber spin as AI generates a pixel-perfect 90s webpage
 5. Click links. Fall down rabbit holes. Discover someone's Buffy fan shrine. Read a university research page about Java applets. Visit a GeoCities neighbourhood.
 6. Open mIRC. Join `#warez`. Try to download a movie. Get kicked by Kane.
-7. Lose an hour. No regrets.
+7. Open ICQ. Chat with your mates. Get your spelling corrected by Phweak.
+8. Launch DOOM 95. Clear the level. Die repeatedly.
+9. Lose an hour. No regrets.
 
 Every page is built with **real 90s HTML** — `<table>` layouts, `<font>` tags, `bgcolor` attributes, `<marquee>`, `<blink>`, nested tables within tables within tables. No CSS. No divs. Just like the creator of the original page intended.
 
@@ -98,6 +102,31 @@ Downloaded files appear in a Windows Explorer-style file manager. Double-click a
 
 MIDI files are the one exception — they actually play (see below).
 
+## ICQ
+
+Double-click the ICQ icon to open a classic ICQ 99-style instant messenger. You're logged in as one of three friends from school — all 17, all geeky, all very 1996.
+
+### The Friends
+
+**Phweak!** — Impatient, sharp, keeps his cards close to his chest. Corrects eggnog's spelling. Knows about WinMX before anyone else. Will never start a conversation... unless you mention a Win98 beta CD, in which case he'll casually invite himself round.
+
+**Incon** — Quiet, witty, dry. Rarely starts conversations. Gets on well with Phweak — they talk graphics cards and Quake. The one who silently judges your taste in music.
+
+**eggnog123** — Enthusiastic, friendly, terrible speller. Says "definately" and "wierd" without irony. Talks to everyone about MIDI files and Star Trek desktop themes. The only one who messages first.
+
+All conversations are AI-driven with era-appropriate topics, typing delays proportional to message length, and no emojis (it's 1996).
+
+## DOOM 95
+
+Double-click the skull icon to launch a Wolfenstein 3D-style first-person shooter running entirely in the browser.
+
+- **Raycaster engine** — DDA-based wall casting at 320x200, pixel-rendered to an ImageData buffer
+- **Procedural textures** — four 64x64 wall textures (stone, brick, blue tech, wood) generated at startup
+- **Enemies** — six sprite-based guards with chase AI and attack mechanics
+- **Combat** — click to shoot, with hit detection and weapon animation
+- **HUD** — health bar, ammo counter, and a Doom-style face that reacts to damage
+- **Controls** — WASD/arrows to move, mouse to shoot
+
 ## MIDI Player
 
 Pages can embed MIDI music, and there's a dedicated **MIDI Farm** browser (`midi.html`) for the full library. Playback uses a retro Windows Media Player 6.4-style UI backed by real Web Audio synthesis — no plugins required.
@@ -147,11 +176,12 @@ sudo scripts/uninstall-service.sh
 ```
 public/          # The "shell" — desktop, browser chrome, CRT effects
   css/           # Desktop, Netscape, mIRC, CRT scanline styles
-  js/            # Window manager, browser, mIRC client, dial-up, audio
+  js/            # Window manager, browser, mIRC, ICQ, DOOM, dial-up, audio
   midi.html      # MIDI Farm music library browser
   gifs.html      # GIF Vault browser
 server/          # The "internet" — AI generation engine
   mirc-chat.js   # AI IRC persona engine
+  icq-chat.js    # AI ICQ persona engine
   downloads.js   # XDCC download persistence
   providers/     # Claude, OpenAI, Ollama adapters
   www/           # Router, search engine, page generator, content classifier
