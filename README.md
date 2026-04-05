@@ -13,7 +13,7 @@ Type any URL. Get a fully-generated, gloriously authentic mid-90s webpage — co
 WWWhippet simulates the entire experience of browsing the internet in the late '90s. It's not just a CSS skin or a retro theme — it's a **living, breathing fake internet** generated on the fly by AI.
 
 - **A full desktop environment** — CRT monitor, scanlines, taskbar, Start button, draggable windows
-- **Netscape Navigator** — address bar, throbber, the works
+- **Internet Browser** — Netscape Navigator-style interface with address bar, throbber, the works
 - **A search engine** — type a query, get a page of AI-generated 90s search results
 - **Click any link** — every link leads to another freshly-generated page, building an entire interconnected web as you browse
 - **Dial-up networking** — with authentic modem sounds (optional Ollama integration actually loads/unloads models on "connect" and "disconnect")
@@ -23,7 +23,7 @@ WWWhippet simulates the entire experience of browsing the internet in the late '
 
 ## The Experience
 
-1. Double-click Netscape Navigator
+1. Double-click Internet Browser
 2. Hear the modem screech (if you dare)
 3. Type `www.anything-you-want.com` in the address bar
 4. Watch the throbber spin as AI generates a pixel-perfect 90s webpage
@@ -53,11 +53,11 @@ Open `http://localhost:3000` and start browsing.
 
 WWWhippet supports multiple AI backends — switch between them from the system tray or settings panel:
 
-| Provider | Model | Notes |
-|----------|-------|-------|
-| **Claude** | Anthropic API | Best quality 90s pages |
-| **OpenAI** | GPT-4 | Great alternative |
-| **Ollama** | Local models | Free, private, uses dial-up connect/disconnect to load/unload models |
+| Provider | Models | Notes |
+|----------|--------|-------|
+| **Claude** | `claude-sonnet-4` / `claude-haiku-4-5` (fast) | Best quality 90s pages |
+| **OpenAI** | `gpt-4o` / `gpt-4o-mini` (fast) | Great alternative |
+| **Ollama** | Local models (Mistral default) | Free, private, uses dial-up connect/disconnect to load/unload models |
 
 ## Running as a Service
 
