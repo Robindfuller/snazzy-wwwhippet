@@ -70,9 +70,12 @@ const ICQ = {
     this.winState.onClose = () => { this.winState = null; };
     this._wireEvents(user);
 
-    // Send initial greeting from Phweak! after a short delay (if user is eggnog123)
-    if (user === 'eggnog123') {
-      setTimeout(() => this._sendGreeting(user), 3000 + Math.random() * 4000);
+    // eggnog123 will message anyone. Phweak! will message Incon.
+    if (user !== 'eggnog123') {
+      setTimeout(() => this._sendGreeting(user, 'eggnog123'), 5000 + Math.random() * 10000);
+    }
+    if (user === 'Incon') {
+      setTimeout(() => this._sendPhweakGreeting(user), 8000 + Math.random() * 15000);
     }
   },
 
@@ -249,6 +252,8 @@ const ICQ = {
         if (typingEl) typingEl.textContent = `${contactNick} is typing...`;
         await new Promise(r => setTimeout(r, totalDelay));
 
+        if (typingEl) typingEl.textContent = '';
+
         const replyMsg = { from: contactNick, text: data.reply, time: this._ts() };
         history.push(replyMsg);
 
@@ -273,21 +278,30 @@ const ICQ = {
   },
 
   // Send an initial greeting message from a contact
-  _sendGreeting(user) {
-    const contactNick = 'Phweak!';
+  _sendGreeting(user, contactNick) {
     const history = _icqGetHistory(user, contactNick);
 
     // Only send if no history yet
     if (history.length > 0) return;
 
-    const greetings = [
-      'yo eggnog u there?? got a question',
-      'hey are you about',
-      'eggnog you there',
-      'hello?',
-      'hey whats up',
-      'you online?',
+    // eggnog123 talks to Incon about simple stuff, to Phweak about general things
+    const eggnogToIncon = [
+      'hey!! have you heard that star trek midi its well good',
+      'do you know where i can get star trek desktop themes',
+      'i found this midi of the x files theme its so cool',
+      'have you seen that website with all the midi files',
+      'do you know how to change your desktop wallpaper',
+      'i got a star trek screensaver its class',
     ];
+    const eggnogGeneral = [
+      'hey!!',
+      'hiii',
+      'omg hi are you there',
+      'hello!!',
+      'hey hey hey',
+      'ohhh you online!!',
+    ];
+    const greetings = contactNick === 'Incon' ? eggnogToIncon : eggnogGeneral;
     const text = greetings[Math.floor(Math.random() * greetings.length)];
     const greetMsg = { from: contactNick, text, time: this._ts() };
     history.push(greetMsg);
@@ -296,6 +310,35 @@ const ICQ = {
     AudioManager.playIcqMessage();
 
     // Show unread if chat not open
+    if (!this.chatWindows[contactNick] || !document.contains(this.chatWindows[contactNick].el)) {
+      this.unread[contactNick] = (this.unread[contactNick] || 0) + 1;
+      this._updateContactBadge(contactNick);
+    } else {
+      const msgEl = this.chatWindows[contactNick].el.querySelector('.icq-chat-messages');
+      msgEl.insertAdjacentHTML('beforeend', this._renderMsg(greetMsg, user));
+      msgEl.scrollTop = msgEl.scrollHeight;
+    }
+  },
+
+  _sendPhweakGreeting(user) {
+    const contactNick = 'Phweak!';
+    const history = _icqGetHistory(user, contactNick);
+    if (history.length > 0) return;
+
+    const greetings = [
+      'have you seen the voodoo 3 benchmarks',
+      'reckon half life or quake 2 has better deathmatch',
+      'whats your fps like in quake on that riva tnt',
+      'did you see that new geforce card',
+      'you playing half life yet or still on quake',
+      'how much was your voodoo 2',
+    ];
+    const text = greetings[Math.floor(Math.random() * greetings.length)];
+    const greetMsg = { from: contactNick, text, time: this._ts() };
+    history.push(greetMsg);
+
+    AudioManager.playIcqMessage();
+
     if (!this.chatWindows[contactNick] || !document.contains(this.chatWindows[contactNick].el)) {
       this.unread[contactNick] = (this.unread[contactNick] || 0) + 1;
       this._updateContactBadge(contactNick);
