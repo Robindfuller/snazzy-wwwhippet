@@ -3,6 +3,8 @@
 const ai = require('./ai');
 
 // The three core recurring characters — same across all channels
+const BUILT_IN_NICKS = ['Kane', 'Phweak!', 'eggnog123'];
+
 const CORE_PERSONAS = `
 CHARACTERS:
 
@@ -69,7 +71,8 @@ RULES:
 - ONLY return a valid JSON array, nothing else
 
 KICK FORMAT: If Kane kicks someone, use: {"nick":"Kane","message":"<kick reason/comment>","kick":"<nickname_to_kick>"}
-Only kick when genuinely provoked after a warning. The kick target should be eggnog123 or ${userNick || 'the_user'} if they're being a n00b.`;
+Only kick when genuinely provoked after a warning. The kick target should be eggnog123 or ${userNick || 'the_user'} if they're being a n00b.
+${BUILT_IN_NICKS.includes(userNick) ? `\nIMPORTANT: The user is playing as ${userNick}. Do NOT generate any responses from ${userNick} — the user controls that character. Only generate responses from the OTHER characters.` : ''}`;
 
   const recentHistory = history.slice(-10).map(m => `<${m.nick}> ${m.text}`).join('\n');
   const userPrompt = `Recent chat:
@@ -87,7 +90,10 @@ If Kane kicks: {"nick":"Kane","message":"reason","kick":"nickname"}`;
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed) && parsed.every(r => r.nick && r.message)) {
-        return parsed.slice(0, 4);
+        const filtered = BUILT_IN_NICKS.includes(userNick)
+          ? parsed.filter(r => r.nick !== userNick)
+          : parsed;
+        return filtered.slice(0, 4);
       }
     }
     return [];
